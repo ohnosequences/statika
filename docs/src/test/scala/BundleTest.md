@@ -1,7 +1,9 @@
 ### Index
 
 + src
+  + .DS_Store
   + main
+    + .DS_Store
     + scala
       + [Bundle.scala](../../main/scala/Bundle.md)
       + [DepsTower.scala](../../main/scala/DepsTower.md)
@@ -10,6 +12,7 @@
       + [package.scala](../../main/scala/package.md)
       + [ZipUnionHLists.scala](../../main/scala/ZipUnionHLists.md)
   + test
+    + .DS_Store
     + scala
       + [BundleTest.scala](BundleTest.md)
       + [InstallWithDepsSuite.scala](InstallWithDepsSuite.md)
