@@ -17,7 +17,7 @@ the work with environment should be done there.
 
 package ohnosequences.statika
 
-import shapeless._
+// import shapeless._
 import ohnosequences.typesets._
 
 trait AnyBundle {
@@ -29,19 +29,6 @@ trait AnyBundle {
   type Deps <: TypeSet
   val  deps: Deps
 
-  /*  Besides the list of top-level dependencies (`deps`), a bundle should know all indirect
-      dependencies, because it will need them for the proper installation. So the `depsTower` value
-      stores _all_ dependencies of the bundle, but in a format of a **tower**.
-
-      It's an `HList` of `HList`s: first goes the list of bundles which don't depend  on anything
-      _0-level_, then bundles, which are dependent on them — _1-level_,  then bundles that can
-      depend on 0-level or 1-level and so on.
-
-      So one can evaluate the level of bundle as length of `depsTower` plus one.
-  */
-  type DepsTower <: HList
-  val  depsTower: DepsTower
-
   /*  `install` method of `Bundle` is what bundle is supposed to do:
       - if it's a _tool_, install it;
       - if it's a _resource_, prepare/create it (and other methods can provide 
@@ -51,7 +38,7 @@ trait AnyBundle {
       So this method contains any bundle's interaction with the environment and that's why it
       requires a distribution (see also `Distribution.scala`).
   */
-  def install[D <: AnyDistribution](d: D): InstallResults = success(name + " is installed")
+  def install[D <: AnyDistribution](d: D): InstallResults = success(fullName + " is installed")
 }
 
 /* ### Auxiliary stuff
@@ -61,12 +48,6 @@ the type-members and evaluates `depsTower`.
 
 If you want to inherit from this class _abstractly_, you need to preserve the same implicit context and then you can extend it, providing the types explicitly. See [Distribution code](Distribution.md) for example.
 */
-abstract class Bundle[
-    D <: TypeSet : ofBundles
-  , T <: HList   : towerFor[D]#is
-  ](val  deps:  D = ∅) extends AnyBundle {
-    type Deps = D 
-    val  depsTower = deps.tower
-    type DepsTower = T
-  }
+abstract class Bundle[D <: TypeSet : ofBundles](val deps: D = ∅) 
+    extends AnyBundle { type Deps = D }
 

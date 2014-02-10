@@ -7,6 +7,57 @@ them.
 
 package ohnosequences.statika
 
+/*  As the installation process consists of a sequence of steps, we want to know the result of
+    each step. `InstallResults` type is just a cover on a the list of results of each installation
+    step. It also contains some operations to combine such steps (i.e. their results).
+*/
+trait InstallResults{
+
+  val trace: List[InstallResult]
+  val hasFailures: Boolean
+  val isSuccessful: Boolean = ! hasFailures
+
+  /*  Combinators:
+      * `A ->- B` — "and then": if `A` was successful, return `B`
+      * `A -&- B` — "and": if `A` was successful, append it to `B`
+      * `A -|- B` — "or": irrespectively of `A` result, append it to `B`
+
+      Note that the second argument is lazy and it can be anything that can be converted to
+      `InstallResults`.
+  */    
+  def ->-[T : IsResult](ts: => T): InstallResults
+  def -&-[T : IsResult](ts: => T): InstallResults
+  def -|-[T : IsResult](ts: => T): InstallResults
+
+}
+
+/*  Now, we want not just to operate on a list of results, but to have an indicator of how things
+    are going for the whole list. `Success` represents a list, where all results are positive and
+    defines the appropriate combinators:
+*/  
+case class Success(val trace: List[InstallResult]) extends InstallResults { 
+  val hasFailures = false
+
+  def ->-[T : IsResult](ts: => T) = ts
+  def -&-[T : IsResult](ts: => T) = implicitly[InstallResults](ts) match {
+    case Success(tr) => Success(trace ::: tr)
+    case Failure(tr) => Failure(trace ::: tr)
+  }
+  def -|-[T : IsResult](ts: => T) = Success(trace ::: ts.trace)
+}
+
+/* `Failure` represents a list of results, among which there is at least one negative: */
+case class Failure(val trace: List[InstallResult]) extends InstallResults { 
+  val hasFailures = true
+
+  def ->-[T : IsResult](ts: => T) = this
+  def -&-[T : IsResult](ts: => T) = this
+  def -|-[T : IsResult](ts: => T) = implicitly[InstallResults](ts) match {
+    case Success(tr) => Success(trace ::: tr)
+    case Failure(tr) => Failure(trace ::: tr)
+  }
+}
+  
 trait InstallMethods {
 
   /*  ### Install result types
@@ -16,30 +67,6 @@ trait InstallMethods {
   type FailureMessage = String
   type SuccessMessage = String
   type InstallResult = Either[FailureMessage, SuccessMessage]
-
-  /*  As the installation process consists of a sequence of steps, we want to know the result of
-      each step. `InstallResults` type is just a cover on a the list of results of each installation
-      step. It also contains some operations to combine such steps (i.e. their results).
-  */
-  trait InstallResults{
-
-    val trace: List[InstallResult]
-    val hasFailures: Boolean
-    val isSuccessful: Boolean = ! hasFailures
-
-    /*  Combinators:
-        * `A ->- B` — "and then": if `A` was successful, return `B`
-        * `A -&- B` — "and": if `A` was successful, append it to `B`
-        * `A -|- B` — "or": irrespectively of `A` result, append it to `B`
-
-        Note that the second argument is lazy and it can be anything that can be converted to
-        `InstallResults`.
-    */    
-    def ->-[T : IsResult](ts: => T): InstallResults
-    def -&-[T : IsResult](ts: => T): InstallResults
-    def -|-[T : IsResult](ts: => T): InstallResults
-
-  }
 
   // Type alias for context bounds (instead of view bounds)
   type IsResult[T] = T => InstallResults
@@ -53,33 +80,6 @@ trait InstallMethods {
   val failTolerant: InstallStrategy = _ -|- _
 
 
-  /*  Now, we want not just to operate on a list of results, but to have an indicator of how things
-      are going for the whole list. `Success` represents a list, where all results are positive and
-      defines the appropriate combinators:
-  */  
-  case class Success(val trace: List[InstallResult]) extends InstallResults { 
-    val hasFailures = false
-
-    def ->-[T : IsResult](ts: => T) = ts
-    def -&-[T : IsResult](ts: => T) = implicitly[InstallResults](ts) match {
-      case Success(tr) => Success(trace ::: tr)
-      case Failure(tr) => Failure(trace ::: tr)
-    }
-    def -|-[T : IsResult](ts: => T) = Success(trace ::: ts.trace)
-  }
-
-  /* `Failure` represents a list of results, among which there is at least one negative: */
-  case class Failure(val trace: List[InstallResult]) extends InstallResults { 
-    val hasFailures = true
-
-    def ->-[T : IsResult](ts: => T) = this
-    def -&-[T : IsResult](ts: => T) = this
-    def -|-[T : IsResult](ts: => T) = implicitly[InstallResults](ts) match {
-      case Success(tr) => Success(trace ::: tr)
-      case Failure(tr) => Failure(trace ::: tr)
-    }
-  }
-  
   /*  For backwards compatibility and for convenience, there are simple "constructors" for the 
       `InstallResults` instances. You can think of `InstallResults` just as about _lists of 
       messages_ and as they are (implicitly) convertible to `List`, use all normal list operations 
