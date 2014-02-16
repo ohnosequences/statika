@@ -22,7 +22,7 @@ Summing the following code up, a distribution consists of
 package ohnosequences.statika
 
 import shapeless._
-import shapeless.poly._
+// import shapeless.poly._
 import shapeless.ops.hlist._
 import ohnosequences.typesets._
 
@@ -75,15 +75,15 @@ trait AnyDistribution extends AnyBundle { dist =>
   }
  
   def installWithDeps[
-    B <: AnyBundle : isMember
-    T <: HList : isInstallableList
+    B <: AnyBundle : isMember,
+    T <: HList : towerFor[b.Deps]#is : isInstallableList
   ](b: B)
   (implicit 
-    tw: towerFor[b.Deps]#is[T],
-    inst: isInstallableSet[b.Deps]
+    e: ofBundles[b.Deps]
+    // inst: isInstallableSet[b.Deps]
   ): InstallResults =
-    setContext -&- Install(b)
-    Install(tw(b.deps)) -&- 
+    setContext -&-
+    Install(b.deps.tower) -&- 
     Install(b)
 
 }

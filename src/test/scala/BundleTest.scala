@@ -31,7 +31,7 @@ class BuhSuite extends org.scalatest.FunSuite {
   case object w extends Bundle(r :~: hey :~: ∅)
   case object e extends Bundle(q :~: w :~: ∅)
 
-  test("output tower") {
-    e.depsTower.map(genericPrintln); println()
-  }
+  // test("output tower") {
+  //   hey.deps.tower.map(genericPrintln); println()
+  // }
 }
