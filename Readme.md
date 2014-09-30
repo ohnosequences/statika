@@ -34,3 +34,8 @@ Examples:
 ### Documentation
 
 See it in [docs](docs/) folder.
+
+### Contacts
+
+This project is maintained by @laughedelic. Join the chat-room if you want to ask or discuss something  
+[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/ohnosequences/statika?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
