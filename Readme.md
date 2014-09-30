@@ -1,4 +1,5 @@
 ## Statika
+[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/ohnosequences/statika?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Using types for immutable package management. Because we want a _static insurance_, i.e. to know everything we need about dependencies in compile time.
 
