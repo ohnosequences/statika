@@ -24,7 +24,8 @@ package ohnosequences.statika
 import shapeless._
 import shapeless.poly._
 import shapeless.ops.hlist._
-import ohnosequences.typesets._
+import ohnosequences.cosas._, AnyTypeSet._
+import ohnosequences.cosas.ops.typeSet._
 
 trait AnyDistribution extends AnyBundle { dist =>
 
@@ -32,7 +33,7 @@ trait AnyDistribution extends AnyBundle { dist =>
 
       Basically it's just a set of bundles that _work with this distribution_.
   */
-  type Members <: TypeSet
+  type Members <: AnyTypeSet
   val  members: Members
 
   type isMember[B <: AnyBundle] = B ∈ Members
@@ -57,21 +58,26 @@ trait AnyDistribution extends AnyBundle { dist =>
       sequence failed to install, the process stops and returns the trace of installation steps.
   */  
   type isInstallableList[Bs <: HList] = MapFolder[Bs, InstallResults, Install.type]
-  type isInstallableSet[S <: TypeSet] = SetMapFolder[S, InstallResults, Install.type]
+  type isInstallableSet[S <: AnyTypeSet] = MapFoldSet[Install.type, S, InstallResults]
   type isInstallable[B <: AnyBundle] = isInstallableList[B#DepsTower]
  
   object Install extends Poly1 {
+
       implicit def bundle[B <: AnyBundle] =
         at[B]{ _.install(dist) }
  
-      implicit def typeset[S <: TypeSet : isInstallableSet] =
-        at[S]{ _.mapFold(accum)(Install)(failFast) }
+      implicit def typeset[S <: AnyTypeSet : isInstallableSet] = at[S] { 
 
-      implicit def hlist[L <: HList : isInstallableList] =
-        at[L]{ _.foldMap(accum)(Install)(failFast) }
+        s: S => s.mapFold(Install)(accum)(failFast) 
+      }
+
+      implicit def hlist[L <: HList : isInstallableList] = at[L] { 
+
+        l: L => l.foldMap(accum)(Install: Install.type)(failFast) 
+      }
 
       // This is an accumulator for the map-folders
-      val accum = Success(List()) : InstallResults
+      val accum: InstallResults = Success(List()) : InstallResults
   }
  
   def installWithDeps[B <: AnyBundle : isMember : isInstallable](b: B): InstallResults =
@@ -85,8 +91,8 @@ trait AnyDistribution extends AnyBundle { dist =>
 Just a constructor with the parameters for members and deps:
 */
 abstract class Distribution[
-    M <: TypeSet : ofBundles
-  , D <: TypeSet : ofBundles
+    M <: AnyTypeSet : ofBundles
+  , D <: AnyTypeSet : ofBundles
   , T <: HList   : towerFor[D]#is
   ](val  members:  M, deps: D = ∅) extends Bundle[D, T](deps) with AnyDistribution {
     type Members = M 

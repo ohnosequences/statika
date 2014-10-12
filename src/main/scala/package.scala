@@ -9,7 +9,7 @@ package ohnosequences
 
 import shapeless._
 import shapeless.ops.hlist.Prepend
-import ohnosequences.typesets._
+import ohnosequences.cosas._, AnyTypeSet._
 
 package object statika 
  extends DepsTower
@@ -20,7 +20,7 @@ package object statika
   type dependsOn[B <: AnyBundle] = { type is[X <: AnyBundle] = B ∈ X#Deps }
 
   // evidence that the given `TypeSet` consists only of bundles
-  type ofBundles[S <: TypeSet] = boundedBy[AnyBundle]#is[S]
+  type ofBundles[S <: AnyTypeSet] = boundedBy[AnyBundle]#is[S]
 
   /*  Some context bounds conveniences (`Prepend` not `Merge`!)
       for saying: `[ LM <: HList : (L ::: M)#is ]`
@@ -30,7 +30,7 @@ package object statika
   type :+[L <: HList, X] = { type is[O <: HList] = (L ::: (X :: HNil))#is[O] }
     
   /* ### Deps Tower */
-  type towerFor[Ds <: TypeSet] = { type is[O <: HList] = TowerFor[Ds] { type Out = O } }
+  type towerFor[Ds <: AnyTypeSet] = { type is[O <: HList] = TowerFor[Ds] { type Out = O } }
 
   /* ### Implicit conversion from ProcessBuilder-like things to InstallResults */
   implicit def cmdToResult[T : CmdLike](cmd: T): InstallResults = runCommand(cmd)()

@@ -3,9 +3,17 @@ package ohnosequences.statika.tests
 import shapeless._
 import shapeless.poly._
 import ohnosequences.statika._
-import ohnosequences.typesets._
+import ohnosequences.cosas._, AnyTypeSet._
 
-object genericPrintln extends (TypeSet -> Unit)(println(_))
+import shapeless.ops.hlist._
+
+object genericPrintln extends Poly1 {
+
+  implicit def typeset[L <: HList] = at[L] {
+
+    l: L => println(l)
+  }
+}
 
 class NameSuite extends org.scalatest.FunSuite { 
   object Foo {
@@ -32,6 +40,10 @@ class BuhSuite extends org.scalatest.FunSuite {
   case object e extends Bundle(q :~: w :~: ∅)
 
   test("output tower") {
-    e.depsTower.map(genericPrintln); println()
+
+    val dp = e.depsTower
+     
+    println(dp)
+    // println()
   }
 }

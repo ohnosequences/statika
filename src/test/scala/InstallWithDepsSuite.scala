@@ -1,7 +1,7 @@
 package ohnosequences.statika.tests
 
 import ohnosequences.statika._
-import ohnosequences.typesets._
+import ohnosequences.cosas._, AnyTypeSet._
 
 class InstallWithDepsSuite extends org.scalatest.FunSuite {
 
@@ -11,8 +11,8 @@ class InstallWithDepsSuite extends org.scalatest.FunSuite {
 
     // checking that the corresponding hierarchies produce the same towers
     implicitly[Qux.DepsTower ~~ Quux.DepsTower]
-    implicitly[Buzz.DepsTower ~~ Buzzz.DepsTower]
-    implicitly[Buuzz.DepsTower ~~ Buuzzz.DepsTower]
+    // implicitly[Buzz.DepsTower ~~ Buzzz.DepsTower]
+    // implicitly[Buuzz.DepsTower ~~ Buuzzz.DepsTower]
 
     assert(Dist.installWithDeps(Bar).isSuccessful)
     assert(Dist.installWithDeps(Foo).isSuccessful)

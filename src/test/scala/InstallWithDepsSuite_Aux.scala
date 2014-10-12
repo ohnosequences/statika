@@ -2,7 +2,7 @@ package ohnosequences.statika.tests
 
 import shapeless._
 import ohnosequences.statika._
-import ohnosequences.typesets._
+import ohnosequences.cosas._, AnyTypeSet._
 import sys.process._
 
 object FooBundles {
@@ -12,9 +12,9 @@ object FooBundles {
   object ~~ {
     implicit val nils = new (HNil ~~ HNil) {}
     implicit def cons[
-      PH <: TypeSet, PT <: HList
-    , QH <: TypeSet, QT <: HList
-    ](implicit h: PH ~ QH, t: PT ~~ QT) = new ((PH :: PT) ~~ (QH :: QT)) {}
+      PH <: AnyTypeSet, PT <: HList
+    , QH <: AnyTypeSet, QT <: HList
+    ](implicit h: PH ~:~ QH, t: PT ~~ QT) = new ((PH :: PT) ~~ (QH :: QT)) {}
   }
 
 

@@ -1,9 +1,9 @@
-/* ## Parallel (pair-wise) union of two HLists consisting of TypeSets */
+/* ## Parallel (pair-wise) union of two HLists consisting of AnyTypeSets */
 
 package ohnosequences.statika
 
 import shapeless._
-import ohnosequences.typesets._
+import ohnosequences.cosas._, AnyTypeSet._
 
 trait zUz[F <: HList, S <: HList] { type Out <: HList
   def apply(f: F, s: S): Out
@@ -25,14 +25,14 @@ trait LowPriorityZipUnion {
     }
 
   implicit def zmHList[
-      FH <: TypeSet, FT <: HList
-    , SH <: TypeSet, ST <: HList
+      FH <: AnyTypeSet, FT <: HList
+    , SH <: AnyTypeSet, ST <: HList
     ](implicit 
-      h: FH  U  SH
+      h: FH  ∪  SH
     , t: FT zUz ST
     ) = new      ((FH :: FT) zUz (SH :: ST)) { type Out = h.Out :: t.Out
       def apply(f: FH :: FT,   s: SH :: ST) = 
-        (f.head U s.head) :: (f.tail zUz s.tail)
+        (f.head ∪ s.head) :: (f.tail zUz s.tail)
     }
 }
 

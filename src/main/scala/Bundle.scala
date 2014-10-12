@@ -18,7 +18,7 @@ the work with environment should be done there.
 package ohnosequences.statika
 
 import shapeless._
-import ohnosequences.typesets._
+import ohnosequences.cosas._, AnyTypeSet._
 
 trait AnyBundle {
 
@@ -26,7 +26,7 @@ trait AnyBundle {
   final val name: String = fullName.split('.').last
   
   /* Every bundle has a list of other bundles on which this one is dependent */
-  type Deps <: TypeSet
+  type Deps <: AnyTypeSet
   val  deps: Deps
 
   /*  Besides the list of top-level dependencies (`deps`), a bundle should know all indirect
@@ -62,11 +62,12 @@ the type-members and evaluates `depsTower`.
 If you want to inherit from this class _abstractly_, you need to preserve the same implicit context and then you can extend it, providing the types explicitly. See [Distribution code](Distribution.md) for example.
 */
 abstract class Bundle[
-    D <: TypeSet : ofBundles
+    D <: AnyTypeSet : ofBundles
   , T <: HList   : towerFor[D]#is
   ](val  deps:  D = ∅) extends AnyBundle {
     type Deps = D 
-    val  depsTower = deps.tower
     type DepsTower = T
+    val  depsTower = deps.tower
+    
   }
 

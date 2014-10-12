@@ -22,9 +22,9 @@ See also [Union](shapeless/sets/Union.md) and [ZipUnion](shapeless/ZipUnion.md) 
 package ohnosequences.statika
 
 import shapeless._
-import ohnosequences.typesets._
+import ohnosequences.cosas._, AnyTypeSet._
 
-trait TowerFor[Ds <: TypeSet] { type Out <: HList
+trait TowerFor[Ds <: AnyTypeSet] { type Out <: HList
   def apply(l: Ds): Out
 }
 
@@ -34,7 +34,7 @@ object TowerFor {
   }
 
   implicit def dtHList[
-    H <: AnyBundle, T <: TypeSet
+    H <: AnyBundle, T <: AnyTypeSet
   , HOut <: HList, TOut <: HList
   ](implicit 
     tower:  towerFor[T]#is[TOut]
@@ -42,13 +42,13 @@ object TowerFor {
   , zipU: HOut zUz TOut
   ) = new TowerFor[H :~: T] { type Out = zipU.Out
       def apply(l: H :~: T) = 
-        zipU( concat(l.head.depsTower, set(l.head) :: HNil), tower(l.tail) )
+        zipU( concat(l.head.depsTower, (l.head :~: ∅) :: HNil), tower(l.tail) )
     }
 }
 
 /* Adding `.tower` method to any `TypeSet` consisting of bundles: */
 trait DepsTower {
-  implicit class TowerHList[D <: TypeSet : ofBundles](l: D) {
+  implicit class TowerHList[D <: AnyTypeSet : ofBundles](l: D) {
     def tower[T <: HList](implicit t: towerFor[D]#is[T]): T = t(l)
   }
 }

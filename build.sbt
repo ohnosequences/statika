@@ -4,10 +4,12 @@ name := "statika"
 
 organization := "ohnosequences"
 
+scalaVersion := "2.11.1"
+
 bucketSuffix := "era7.com"
 
 libraryDependencies ++= Seq (
-    "com.chuusai" % "shapeless_2.10.2" % "2.0.0-M1"
-  , "ohnosequences" %% "type-sets" % "0.3.1"
-  , "org.scalatest" %% "scalatest" % "2.0" % "test"
+    "com.chuusai" %% "shapeless" % "2.0.0"
+  , "ohnosequences" %% "cosas" % "0.6.0-SNAPSHOT"
+  , "org.scalatest" %% "scalatest" % "2.2.1" % "test"
   )
