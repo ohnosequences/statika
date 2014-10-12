@@ -1,21 +1,3 @@
-### Index
-
-+ src
-  + main
-    + scala
-      + [Bundle.scala](Bundle.md)
-      + [DepsTower.scala](DepsTower.md)
-      + [Distribution.scala](Distribution.md)
-      + [InstallMethods.scala](InstallMethods.md)
-      + [package.scala](package.md)
-      + [ZipUnionHLists.scala](ZipUnionHLists.md)
-  + test
-    + scala
-      + [BundleTest.scala](../../test/scala/BundleTest.md)
-      + [InstallWithDepsSuite.scala](../../test/scala/InstallWithDepsSuite.md)
-      + [InstallWithDepsSuite_Aux.scala](../../test/scala/InstallWithDepsSuite_Aux.md)
-
-------
 
 ## Tower of Bundle's dependencies
 
@@ -41,9 +23,9 @@ See also [Union](shapeless/sets/Union.md) and [ZipUnion](shapeless/ZipUnion.md) 
 package ohnosequences.statika
 
 import shapeless._
-import ohnosequences.typesets._
+import ohnosequences.cosas._, AnyTypeSet._
 
-trait TowerFor[Ds <: TypeSet] { type Out <: HList
+trait TowerFor[Ds <: AnyTypeSet] { type Out <: HList
   def apply(l: Ds): Out
 }
 
@@ -53,7 +35,7 @@ object TowerFor {
   }
 
   implicit def dtHList[
-    H <: AnyBundle, T <: TypeSet
+    H <: AnyBundle, T <: AnyTypeSet
   , HOut <: HList, TOut <: HList
   ](implicit 
     tower:  towerFor[T]#is[TOut]
@@ -61,7 +43,7 @@ object TowerFor {
   , zipU: HOut zUz TOut
   ) = new TowerFor[H :~: T] { type Out = zipU.Out
       def apply(l: H :~: T) = 
-        zipU( concat(l.head.depsTower, set(l.head) :: HNil), tower(l.tail) )
+        zipU( concat(l.head.depsTower, (l.head :~: ∅) :: HNil), tower(l.tail) )
     }
 }
 ```
@@ -70,10 +52,39 @@ Adding `.tower` method to any `TypeSet` consisting of bundles:
 
 ```scala
 trait DepsTower {
-  implicit class TowerHList[D <: TypeSet : ofBundles](l: D) {
+  implicit class TowerHList[D <: AnyTypeSet : ofBundles](l: D) {
     def tower[T <: HList](implicit t: towerFor[D]#is[T]): T = t(l)
   }
 }
 
 ```
 
+
+------
+
+### Index
+
++ src
+  + test
+    + scala
+      + [InstallWithDepsSuite_Aux.scala][test/scala/InstallWithDepsSuite_Aux.scala]
+      + [InstallWithDepsSuite.scala][test/scala/InstallWithDepsSuite.scala]
+      + [BundleTest.scala][test/scala/BundleTest.scala]
+  + main
+    + scala
+      + [ZipUnionHLists.scala][main/scala/ZipUnionHLists.scala]
+      + [DepsTower.scala][main/scala/DepsTower.scala]
+      + [Bundle.scala][main/scala/Bundle.scala]
+      + [Distribution.scala][main/scala/Distribution.scala]
+      + [package.scala][main/scala/package.scala]
+      + [InstallMethods.scala][main/scala/InstallMethods.scala]
+
+[test/scala/InstallWithDepsSuite_Aux.scala]: ../../test/scala/InstallWithDepsSuite_Aux.scala.md
+[test/scala/InstallWithDepsSuite.scala]: ../../test/scala/InstallWithDepsSuite.scala.md
+[test/scala/BundleTest.scala]: ../../test/scala/BundleTest.scala.md
+[main/scala/ZipUnionHLists.scala]: ZipUnionHLists.scala.md
+[main/scala/DepsTower.scala]: DepsTower.scala.md
+[main/scala/Bundle.scala]: Bundle.scala.md
+[main/scala/Distribution.scala]: Distribution.scala.md
+[main/scala/package.scala]: package.scala.md
+[main/scala/InstallMethods.scala]: InstallMethods.scala.md
