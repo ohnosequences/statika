@@ -35,15 +35,15 @@ class BuhSuite extends org.scalatest.FunSuite {
   // was failing here before: (because couldn't flatten deps)
   case object l extends Bundle(limit :~: ∅)
   case object r extends Bundle(limit :~: ∅)
-  case object q extends Bundle(l :~: r :~: limit :~: ∅)
-  case object w extends Bundle(r :~: hey :~: ∅)
-  case object e extends Bundle(q :~: w :~: ∅)
+  // case object q extends Bundle(l :~: r :~: limit :~: ∅)
+  // case object w extends Bundle(r :~: hey :~: ∅)
+  // case object e extends Bundle(q :~: w :~: ∅)
 
   test("output tower") {
 
-    val dp = e.depsTower
+    val dp = r.deps.tower
      
-    println(dp)
+    // println(dp)
     // println()
   }
 }

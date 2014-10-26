@@ -24,31 +24,34 @@ package ohnosequences.statika
 import shapeless._
 import ohnosequences.cosas._, AnyTypeSet._
 
-trait TowerFor[Ds <: AnyTypeSet] { type Out <: HList
-  def apply(l: Ds): Out
-}
+trait TowerFor[Ds <: AnyTypeSet] extends Fn1[Ds] with OutBound[HList]
 
 object TowerFor {
-  implicit def dtHNil = new TowerFor[∅] { type Out = HNil
-    def apply(l: ∅) = HNil: HNil
-  }
+
+  implicit def dtHNil: 
+      TowerFor[∅] with Out[HNil] = 
+  new TowerFor[∅] with Out[HNil] { def apply(l: In1): Out = HNil }
 
   implicit def dtHList[
-    H <: AnyBundle, T <: AnyTypeSet
-  , HOut <: HList, TOut <: HList
+    H <: AnyBundle, T <: AnyTypeSet,
+    HTow <: HList, HOut <: HList, 
+    TTow <: HList, O <: HList
   ](implicit 
-    tower:  towerFor[T]#is[TOut]
-  , concat: (H#DepsTower :+ (H :~: ∅))#is[HOut] 
-  , zipU: HOut zUz TOut
-  ) = new TowerFor[H :~: T] { type Out = zipU.Out
-      def apply(l: H :~: T) = 
-        zipU( concat(l.head.depsTower, (l.head :~: ∅) :: HNil), tower(l.tail) )
-    }
+    ttower: TowerFor[T] { type Out = TTow },
+    htower: TowerFor[H#Deps] { type Out = HTow },
+    concat: (HTow :+ (H :~: ∅))#is[HOut],
+    zipU: (HOut zUz TTow) { type Out = O }
+  ):  TowerFor[H :~: T] with Out[O] = 
+  new TowerFor[H :~: T] with Out[O] {
+    def apply(l: In1): Out = 
+      zipU( concat(htower(l.head.deps), (l.head :~: ∅) :: HNil), ttower(l.tail) )
+  }
+
 }
 
 /* Adding `.tower` method to any `TypeSet` consisting of bundles: */
 trait DepsTower {
-  implicit class TowerHList[D <: AnyTypeSet : ofBundles](l: D) {
-    def tower[T <: HList](implicit t: towerFor[D]#is[T]): T = t(l)
+  implicit class TowerHList[D <: AnyTypeSet.Of[AnyBundle]](l: D) {
+    def tower[T <: HList](implicit t: TowerFor[D] { type Out = T }): T = t(l)
   }
 }

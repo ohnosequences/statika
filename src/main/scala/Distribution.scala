@@ -59,7 +59,7 @@ trait AnyDistribution extends AnyBundle { dist =>
   */  
   type isInstallableList[Bs <: HList] = MapFolder[Bs, InstallResults, Install.type]
   type isInstallableSet[S <: AnyTypeSet] = MapFoldSet[Install.type, S, InstallResults]
-  type isInstallable[B <: AnyBundle] = isInstallableList[B#DepsTower]
+  // type isInstallable[B <: AnyBundle] = isInstallableList[B#DepsTower]
  
   object Install extends Poly1 {
 
@@ -80,8 +80,12 @@ trait AnyDistribution extends AnyBundle { dist =>
       val accum: InstallResults = Success(List()) : InstallResults
   }
  
-  def installWithDeps[B <: AnyBundle : isMember : isInstallable](b: B): InstallResults =
-      setContext -&- Install((b: B).depsTower) -&- Install(b)
+  def installWithDeps[B <: AnyBundle : isMember, Ds <: HList](b: B)
+    (implicit 
+      l: TowerFor[B#Deps] { type Out = Ds },
+      i: isInstallableList[Ds]
+    ): InstallResults =
+      setContext -&- Install((b: B).deps.tower) -&- Install(b)
 
 }
 
@@ -91,9 +95,9 @@ trait AnyDistribution extends AnyBundle { dist =>
 Just a constructor with the parameters for members and deps:
 */
 abstract class Distribution[
-    M <: AnyTypeSet : ofBundles
-  , D <: AnyTypeSet : ofBundles
-  , T <: HList   : towerFor[D]#is
-  ](val  members:  M, deps: D = ∅) extends Bundle[D, T](deps) with AnyDistribution {
+    M <: AnyTypeSet.Of[AnyBundle]
+  , D <: AnyTypeSet.Of[AnyBundle]
+  // , T <: HList   : towerFor[D]#is
+  ](val  members:  M, deps: D = ∅) extends Bundle[D](deps) with AnyDistribution {
     type Members = M 
 }

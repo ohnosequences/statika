@@ -26,7 +26,7 @@ trait AnyBundle {
   final val name: String = fullName.split('.').last
   
   /* Every bundle has a list of other bundles on which this one is dependent */
-  type Deps <: AnyTypeSet
+  type Deps <: AnyTypeSet.Of[AnyBundle]
   val  deps: Deps
 
   /*  Besides the list of top-level dependencies (`deps`), a bundle should know all indirect
@@ -39,8 +39,8 @@ trait AnyBundle {
 
       So one can evaluate the level of bundle as length of `depsTower` plus one.
   */
-  type DepsTower <: HList
-  val  depsTower: DepsTower
+  // type DepsTower <: HList
+  // val  depsTower: DepsTower
 
   /*  `install` method of `Bundle` is what bundle is supposed to do:
       - if it's a _tool_, install it;
@@ -62,12 +62,12 @@ the type-members and evaluates `depsTower`.
 If you want to inherit from this class _abstractly_, you need to preserve the same implicit context and then you can extend it, providing the types explicitly. See [Distribution code](Distribution.md) for example.
 */
 abstract class Bundle[
-    D <: AnyTypeSet : ofBundles
-  , T <: HList   : towerFor[D]#is
+    D <: AnyTypeSet.Of[AnyBundle]
+  // , T <: HList   : towerFor[D]#is
   ](val  deps:  D = ∅) extends AnyBundle {
     type Deps = D 
-    type DepsTower = T
-    val  depsTower = deps.tower
+    // type DepsTower = T
+    // val  depsTower = deps.tower
     
   }
 
