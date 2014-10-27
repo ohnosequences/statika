@@ -35,14 +35,16 @@ object TowerFor {
 
   implicit def dtHList[
     H <: AnyBundle, T <: TypeSet
+  , HTw <: HList
   , HOut <: HList, TOut <: HList
   ](implicit 
-    tower:  towerFor[T]#is[TOut]
-  , concat: (H#DepsTower :+ (H :~: ∅))#is[HOut] 
+    htower: towerFor[H#Deps]#is[HTw]
+  , concat: (HTw :+ (H :~: ∅))#is[HOut] 
+  , ttower: towerFor[T]#is[TOut]
   , zipU: HOut zUz TOut
   ) = new TowerFor[H :~: T] { type Out = zipU.Out
       def apply(l: H :~: T) = 
-        zipU( concat(l.head.depsTower, set(l.head) :: HNil), tower(l.tail) )
+        zipU( concat(htower(l.head.deps), set(l.head) :: HNil), ttower(l.tail) )
     }
 }
 

@@ -22,7 +22,7 @@ Summing the following code up, a distribution consists of
 package ohnosequences.statika
 
 import shapeless._
-import shapeless.poly._
+// import shapeless.poly._
 import shapeless.ops.hlist._
 import ohnosequences.typesets._
 
@@ -58,7 +58,7 @@ trait AnyDistribution extends AnyBundle { dist =>
   */  
   type isInstallableList[Bs <: HList] = MapFolder[Bs, InstallResults, Install.type]
   type isInstallableSet[S <: TypeSet] = SetMapFolder[S, InstallResults, Install.type]
-  type isInstallable[B <: AnyBundle] = isInstallableList[B#DepsTower]
+  // // type isInstallable[B <: AnyBundle] = isInstallableList[B#DepsTower]
  
   object Install extends Poly1 {
       implicit def bundle[B <: AnyBundle] =
@@ -74,10 +74,20 @@ trait AnyDistribution extends AnyBundle { dist =>
       val accum = Success(List()) : InstallResults
   }
  
-  def installWithDeps[B <: AnyBundle : isMember : isInstallable](b: B): InstallResults =
-      setContext -&- Install((b: B).depsTower) -&- Install(b)
+  def installWithDeps[
+    B <: AnyBundle : isMember,
+    T <: HList : towerFor[b.Deps]#is : isInstallableList
+  ](b: B)
+  (implicit 
+    e: ofBundles[b.Deps]
+    // inst: isInstallableSet[b.Deps]
+  ): InstallResults =
+    setContext -&-
+    Install(b.deps.tower) -&- 
+    Install(b)
 
 }
+
 
 /* 
 ### Auxiliary stuff
@@ -87,7 +97,6 @@ Just a constructor with the parameters for members and deps:
 abstract class Distribution[
     M <: TypeSet : ofBundles
   , D <: TypeSet : ofBundles
-  , T <: HList   : towerFor[D]#is
-  ](val  members:  M, deps: D = ∅) extends Bundle[D, T](deps) with AnyDistribution {
+  ](val  members:  M, deps: D = ∅) extends Bundle[D](deps) with AnyDistribution {
     type Members = M 
 }
