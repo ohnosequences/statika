@@ -20,8 +20,8 @@ class InstallWithDepsSuite extends org.scalatest.FunSuite {
     assert(Dist.installWithDeps(Buzzz).isSuccessful)
 
     assert(Dist.installWithDeps(Qux).hasFailures)
-    // assert(Dist.installWithDeps(Buzz).hasFailures)
-    // assert(Dist.installWithDeps(Buuzz).hasFailures)
+    assert(Dist.installWithDeps(Buzz).hasFailures)
+    assert(Dist.installWithDeps(Buuzz).hasFailures)
     assert(Dist.installWithDeps(Buuzzz).hasFailures)
 
   }

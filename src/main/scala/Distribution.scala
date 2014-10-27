@@ -57,35 +57,35 @@ trait AnyDistribution extends AnyBundle { dist =>
       poly-function. Default strategy is `failFast`, which means, that if something in the 
       sequence failed to install, the process stops and returns the trace of installation steps.
   */  
-  type isInstallableList[Bs <: HList] = MapFolder[Bs, InstallResults, Install.type]
-  type isInstallableSet[S <: AnyTypeSet] = MapFoldSet[Install.type, S, InstallResults]
-  // type isInstallable[B <: AnyBundle] = isInstallableList[B#DepsTower]
- 
-  object Install extends Poly1 {
+  def installWithDeps[B <: AnyBundle : isMember](b: B)
+    (implicit insta: Case1.Aux[InstallWithDeps.type, B, InstallResults]) = insta(b)
 
-      implicit def bundle[B <: AnyBundle] =
-        at[B]{ _.install(dist) }
- 
-      implicit def typeset[S <: AnyTypeSet : isInstallableSet] = at[S] { 
 
-        s: S => s.mapFold(Install)(accum)(failFast) 
+  object InstallWithDeps extends Poly1 {
+
+    implicit def inst[B <: AnyBundle](implicit
+      instaDeps: Case1.Aux[Install.type, B#Deps, InstallResults]
+    ) =
+      at[B]{ b =>
+        setContext -&-
+        instaDeps((b: B).deps) -&-
+        b.install(dist)
       }
+  }
 
-      implicit def hlist[L <: HList : isInstallableList] = at[L] { 
 
-        l: L => l.foldMap(accum)(Install: Install.type)(failFast) 
+  // TODO: this should accumulate a set of installed bundles and subtract it from the arg
+  object Install extends Poly1 {
+ 
+      implicit def typeset[S <: AnyTypeSet.Of[AnyBundle]](implicit
+        instaEach: MapFoldSet[InstallWithDeps.type, S, InstallResults] 
+      ) = at[S] { s: S => 
+        s.mapFold(InstallWithDeps)(accum)(failFast)
       }
 
       // This is an accumulator for the map-folders
       val accum: InstallResults = Success(List()) : InstallResults
   }
- 
-  def installWithDeps[B <: AnyBundle : isMember, Ds <: HList](b: B)
-    (implicit 
-      l: TowerFor[B#Deps] { type Out = Ds },
-      i: isInstallableList[Ds]
-    ): InstallResults =
-      setContext -&- Install((b: B).deps.tower) -&- Install(b)
 
 }
 
