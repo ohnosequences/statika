@@ -29,19 +29,6 @@ trait AnyBundle {
   type Deps <: AnyTypeSet.Of[AnyBundle]
   val  deps: Deps
 
-  /*  Besides the list of top-level dependencies (`deps`), a bundle should know all indirect
-      dependencies, because it will need them for the proper installation. So the `depsTower` value
-      stores _all_ dependencies of the bundle, but in a format of a **tower**.
-
-      It's an `HList` of `HList`s: first goes the list of bundles which don't depend  on anything
-      _0-level_, then bundles, which are dependent on them — _1-level_,  then bundles that can
-      depend on 0-level or 1-level and so on.
-
-      So one can evaluate the level of bundle as length of `depsTower` plus one.
-  */
-  // type DepsTower <: HList
-  // val  depsTower: DepsTower
-
   /*  `install` method of `Bundle` is what bundle is supposed to do:
       - if it's a _tool_, install it;
       - if it's a _resource_, prepare/create it (and other methods can provide 
@@ -61,13 +48,11 @@ the type-members and evaluates `depsTower`.
 
 If you want to inherit from this class _abstractly_, you need to preserve the same implicit context and then you can extend it, providing the types explicitly. See [Distribution code](Distribution.md) for example.
 */
-abstract class Bundle[
-    D <: AnyTypeSet.Of[AnyBundle]
-  // , T <: HList   : towerFor[D]#is
-  ](val  deps:  D = ∅) extends AnyBundle {
-    type Deps = D 
-    // type DepsTower = T
-    // val  depsTower = deps.tower
-    
-  }
+abstract class Bundle[D <: AnyTypeSet.Of[AnyBundle]]
+  (val  deps:  D = ∅) extends AnyBundle {
+   type Deps = D 
+}
 
+object Bundle {
+  type DepsOf[B <: AnyBundle] = B#Deps
+}

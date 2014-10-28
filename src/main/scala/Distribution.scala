@@ -95,9 +95,8 @@ trait AnyDistribution extends AnyBundle { dist =>
 Just a constructor with the parameters for members and deps:
 */
 abstract class Distribution[
-    M <: AnyTypeSet.Of[AnyBundle]
-  , D <: AnyTypeSet.Of[AnyBundle]
-  // , T <: HList   : towerFor[D]#is
-  ](val  members:  M, deps: D = ∅) extends Bundle[D](deps) with AnyDistribution {
-    type Members = M 
+  M <: AnyTypeSet.Of[AnyBundle],
+  D <: AnyTypeSet.Of[AnyBundle]
+](val  members:  M, deps: D = ∅) extends Bundle[D](deps) with AnyDistribution {
+  type Members = M 
 }

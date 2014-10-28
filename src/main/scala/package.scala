@@ -18,12 +18,17 @@ package object statika
       for saying: `[ LM <: HList : (L ::: M)#is ]`
       or `implicit append: (L :+ X)#is[LX]`
   */  
-  type :::[L <: HList, M <: HList] = { type is[O <: HList] = Prepend.Aux[L, M, O] }
-  type :+[L <: HList, X] = { type is[O <: HList] = (L ::: (X :: HNil))#is[O] }
+  // type :::[L <: HList, M <: HList] = { type is[O <: HList] = Prepend.Aux[L, M, O] }
+  // type :+[L <: HList, X] = { type is[O <: HList] = (L ::: (X :: HNil))#is[O] }
     
 
   /* ### Implicit conversion from ProcessBuilder-like things to InstallResults */
   implicit def cmdToResult[T : CmdLike](cmd: T): InstallResults = runCommand(cmd)()
   implicit def resultsToList[T : IsResult](r: T): List[InstallResult] = r.trace
   
+  implicit class FlattenBundles[Bs <: AnyTypeSet.Of[AnyBundle]](bs: Bs) {
+    // def flatten(implicit fl: Flatten[Bs, ∅]): fl.Out = fl(bs, ∅)
+    def next(implicit nx: NextLevel[Bs]): nx.Out = nx(bs)
+    def levels(implicit ls: Levels[Bs]): ls.Out = ls(bs)
+  }
 }

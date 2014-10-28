@@ -33,7 +33,7 @@ class BuhSuite extends org.scalatest.FunSuite {
   case object limit extends Bundle(hey :~: ∅)
 
   // was failing here before: (because couldn't flatten deps)
-  case object l extends Bundle(limit :~: ∅)
+  case object l extends Bundle(limit :~: hey :~: buh :~: ∅)
   case object r extends Bundle(limit :~: ∅)
   case object q extends Bundle(l :~: r :~: limit :~: ∅)
   case object w extends Bundle(r :~: hey :~: ∅)
@@ -41,9 +41,30 @@ class BuhSuite extends org.scalatest.FunSuite {
 
   test("output tower") {
 
-    // val dp = r.deps.tower
-     
-    // println(dp)
-    // println()
+    // case object hub extends Bundle(buh :~: ∅)
+    // implicitly[Flatten[hub.type :~: ∅, ∅]](Flatten.cons)
+     // { type Out = buh.type :~: hub.type :~: ∅ }]
+
+    case object x0 extends Bundle(∅)
+    case object x1 extends Bundle(x0 :~: ∅)
+    case object x2 extends Bundle(x1 :~: x0 :~: ∅)
+    case object x3 extends Bundle(x2 :~: ∅)
+    case object x4 extends Bundle(x3 :~: ∅)
+    // case object x5 extends Bundle(x4 :~: ∅)
+    // case object x6 extends Bundle(x5 :~: ∅)
+    // case object x7 extends Bundle(x6 :~: ∅)
+    // case object x8 extends Bundle(x7 :~: ∅)
+
+    println("_____________________________")
+    println(x4.deps.levels.toString)
+
+    // println(hey.name + ": " + hey.deps.levels.toString)
+    // println(limit.name + ": " + limit.deps.levels.toString)
+    // println(l.name + ": " + l.deps.levels.toString)
+    // println(r.name + ": " + r.deps.levels.toString)
+    // println(q.name + ": " + q.deps.levels.toString)
+    // println(w.name + ": " + w.deps.levels.toString)
+    // println(e.name + ": " + e.deps.levels.toString)
+    println("_____________________________")
   }
 }
