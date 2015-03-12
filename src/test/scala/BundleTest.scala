@@ -55,8 +55,10 @@ class BuhSuite extends org.scalatest.FunSuite {
     // case object x7 extends Bundle(x6 :~: ∅)
     // case object x8 extends Bundle(x7 :~: ∅)
 
+    import shapeless._, Lazy._
+
     println("_____________________________")
-    println(x4.deps.levels.toString)
+    println(x2.deps.next(NextLevel.cons).toString)
 
     // println(hey.name + ": " + hey.deps.levels.toString)
     // println(limit.name + ": " + limit.deps.levels.toString)

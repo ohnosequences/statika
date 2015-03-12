@@ -15,50 +15,63 @@ import shapeless._
 import ohnosequences.cosas._, AnyTypeSet._
 import ohnosequences.cosas.ops.typeSet._
 
-trait UnionList[Bs <: HList] extends Fn1[Bs] with OutBound[AnyTypeSet]
+// trait UnionList[Bs <: HList] extends Fn1[Bs] with OutBound[AnyTypeSet]
 
-object UnionList {
+// object UnionList {
+
+//   implicit def empty:
+//       UnionList[HNil] with Out[∅] =
+//   new UnionList[HNil] with Out[∅] {
+//     def apply(i: In1): Out = ∅
+//   }
+
+//   implicit def cons[
+//     H <: AnyTypeSet, T <: HList,
+//     Rest <: AnyTypeSet, Union <: AnyTypeSet
+//   ](implicit
+//     rec: UnionList[T] { type Out = Rest },
+//     union: (H ∪ Rest) { type Out = Union }
+//   ):  UnionList[H :: T] with Out[Union] =
+//   new UnionList[H :: T] with Out[Union] {
+//     def apply(i: In1): Out = {
+//       union(i.head, rec(i.tail))
+//     }
+//   }
+// }
+
+trait NextLevel[Bs <: AnyTypeSet] extends Fn1[Bs] with OutBound[AnyTypeSet]
+
+// case object deps extends Poly1 {
+//   implicit def default[B <: AnyBundle] = at[B] {
+//     b => b.deps
+//   }
+// }
+
+object NextLevel {
+
+  type Aux[T <: AnyTypeSet, N <: AnyTypeSet] = NextLevel[T] { type Out = N }
+  type Uni[A <: AnyTypeSet, B <: AnyTypeSet, O <: AnyTypeSet] = (A ∪ B) { type Out = O }
 
   implicit def empty:
-      UnionList[HNil] with Out[∅] =
-  new UnionList[HNil] with Out[∅] {
+      NextLevel[∅] with Out[∅] =
+  new NextLevel[∅] with Out[∅] {
     def apply(i: In1): Out = ∅
   }
 
   implicit def cons[
-    H <: AnyTypeSet, T <: HList,
-    Rest <: AnyTypeSet, Union <: AnyTypeSet
+    H <: AnyBundle, T <: AnyTypeSet,
+    TNext <: AnyTypeSet, O <: AnyTypeSet
   ](implicit
-    rec: UnionList[T] { type Out = Rest },
-    union: (H ∪ Rest) { type Out = Union }
-  ):  UnionList[H :: T] with Out[Union] =
-  new UnionList[H :: T] with Out[Union] {
-    def apply(i: In1): Out = {
-      union(i.head, rec(i.tail))
-    }
-  }
-}
-
-trait NextLevel[Bs <: AnyTypeSet] extends Fn1[Bs] with OutBound[AnyTypeSet]
-
-case object deps extends Poly1 {
-  implicit def default[B <: AnyBundle] = at[B] {
-    b => b.deps
-  }
-}
-
-object NextLevel {
-
-  implicit def cons[
-    Curr <: AnyTypeSet,
-    Next <: HList, O <: AnyTypeSet
-  ](implicit
-    next: MapToHList[deps.type, Curr] { type Out = Next },
-    union: UnionList[Next] { type Out = O }
-  ):  NextLevel[Curr] with Out[O] =
-  new NextLevel[Curr] with Out[O] {
+    // next: MapToHList[deps.type, Curr] { type Out = Next },
+    // union: UnionList[Next] { type Out = O }
+    // next: NextLevel[T] { type Out = TNext },
+    // union: (H#Deps ∪ TNext) { type Out = O }
+    next: Lazy[Aux[T, TNext]],
+    union: Lazy[Uni[H#Deps, TNext, O]]
+  ):  NextLevel[H :~: T] with Out[O] =
+  new NextLevel[H :~: T] with Out[O] {
     def apply(curr: In1): Out = {
-      union(next(curr))
+      union.value(curr.head.deps, next.value(curr.tail))
     }
   }
 
