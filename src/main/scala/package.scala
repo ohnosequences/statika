@@ -9,7 +9,7 @@ package ohnosequences
 
 import shapeless._
 import shapeless.ops.hlist.Prepend
-import ohnosequences.cosas._, AnyTypeSet._
+import ohnosequences.cosas._, typeSets._
 
 package object statika 
  extends ZipUnionHLists with InstallMethods {

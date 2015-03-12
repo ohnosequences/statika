@@ -2,7 +2,7 @@
 
 package ohnosequences.statika
 
-import ohnosequences.cosas._, AnyFn._, AnyTypeSet._
+import ohnosequences.cosas._, fns._, typeSets._
 
 @annotation.implicitNotFound(msg = "Can't prepend ${Q} from ${S}")
 trait Prepend[S <: AnyTypeSet, Q <: AnyTypeSet] extends Fn2[S, Q] with OutBound[AnyTypeSet]

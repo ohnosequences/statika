@@ -12,8 +12,8 @@
 package ohnosequences.statika
 
 import shapeless._
-import ohnosequences.cosas._, AnyTypeSet._
-import ohnosequences.cosas.ops.typeSet._
+import ohnosequences.cosas._, fns._, typeSets._
+import ohnosequences.cosas.ops.typeSets._
 
 // trait UnionList[Bs <: HList] extends Fn1[Bs] with OutBound[AnyTypeSet]
 

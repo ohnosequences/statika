@@ -3,7 +3,7 @@
 package ohnosequences.statika
 
 import shapeless._
-import ohnosequences.cosas._, AnyTypeSet._
+import ohnosequences.cosas._, fns._, typeSets._
 
 trait zUz[F <: HList, S <: HList] extends Fn2[F, S] with OutBound[HList] {
  // type Out <: HList

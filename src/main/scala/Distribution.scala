@@ -24,8 +24,8 @@ package ohnosequences.statika
 import shapeless._
 import shapeless.poly._
 import shapeless.ops.hlist._
-import ohnosequences.cosas._, AnyTypeSet._
-import ohnosequences.cosas.ops.typeSet._
+import ohnosequences.cosas._, typeSets._
+import ohnosequences.cosas.ops.typeSets._
 
 trait AnyDistribution extends AnyBundle { dist =>
 

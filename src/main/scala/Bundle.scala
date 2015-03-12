@@ -18,7 +18,7 @@ the work with environment should be done there.
 package ohnosequences.statika
 
 import shapeless._
-import ohnosequences.cosas._, AnyTypeSet._
+import ohnosequences.cosas._, typeSets._
 
 trait AnyBundle {
 
