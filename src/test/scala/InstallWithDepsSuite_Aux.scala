@@ -1,59 +1,52 @@
 package ohnosequences.statika.tests
 
-import shapeless._
-import ohnosequences.statika._
-import ohnosequences.cosas._, AnyTypeSet._
+import ohnosequences.statika._, bundles._, environments._, installations._
+import ohnosequences.cosas._, typeSets._
 import sys.process._
 
 object FooBundles {
 
-  // This is a check that two towers are the same on types. Usefull for tests.
-  trait ~~[P <: HList, Q <: HList]
-  object ~~ {
-    implicit val nils = new (HNil ~~ HNil) {}
-    implicit def cons[
-      PH <: AnyTypeSet, PT <: HList
-    , QH <: AnyTypeSet, QT <: HList
-    ](implicit h: PH ~:~ QH, t: PT ~~ QT) = new ((PH :: PT) ~~ (QH :: QT)) {}
-  }
+  case object Bar extends Module()
 
-
-  case object Bar extends Bundle()
-
-  case object Foo extends Bundle(Bar :~: ∅) {
-    override def install[D <: AnyDistribution](dist: D) = 
+  case object Foo extends Module(Bar :~: ∅) {
+    override def install[D <: AnyEnvironment](dist: D) = 
       "ls" #| "grep .sbt" -&- 
       "echo Foo" ->- 
       success(fullName)
   }
 
 
-  case object Quux extends Bundle(Bar :~: Foo :~: ∅) 
-  case object Qux  extends Bundle(Foo :~: Bar :~: ∅) {
+  case object Quux extends Module(Bar :~: Foo :~: ∅) 
+  case object Qux  extends Module(Foo :~: Bar :~: ∅) {
 
     def dir(d: String) = new java.io.File(d)
 
-    override def install[D <: AnyDistribution](dist: D) = 
+    override def install[D <: AnyEnvironment](dist: D) = 
       Seq("echo", "bar") -&-
       "cat qux" @@ dir(".") -&- // should fail here
       "ls -al" @@ dir("/.") ->-
       success(name)
   }
 
-  case object Buzz  extends Bundle(Foo :~: Qux :~: ∅)
-  case object Buzzz extends Bundle(Quux :~: Foo :~: ∅)
+  case object Buzz  extends Module(Foo :~: Qux :~: ∅)
+  case object Buzzz extends Module(Quux :~: Foo :~: ∅)
 
-  case object Buuzz  extends Bundle(Bar :~: Qux :~: ∅)
-  case object Buuzzz extends Bundle(Qux :~: Bar :~: ∅)
+  case object Buuzz  extends Module(Bar :~: Qux :~: ∅)
+  case object Buuzzz extends Module(Qux :~: Bar :~: ∅)
 
-  val allBundles = {
-    Buzz :~: Buzzz :~: Buuzz :~: Buuzzz :~: 
-    Bar :~: Foo :~: Qux :~: Quux :~: ∅
+
+  case object Env extends AnyEnvironment {
+    def setContext = success(s"Environment ${name} is set up")
   }
 
-  case object Dist extends Distribution(allBundles) {
-    def setContext = success("Distribution " + name)
-  }
 
+  implicit object BarEnv    extends Compatible(Bar, Env)
+  implicit object FooEnv    extends Compatible(Foo, Env)
+  implicit object QuuxEnv   extends Compatible(Quux, Env)
+  implicit object QuxEnv    extends Compatible(Qux, Env)
+  implicit object BuzzEnv   extends Compatible(Buzz, Env)
+  implicit object BuzzzEnv  extends Compatible(Buzzz, Env)
+  implicit object BuuzzEnv  extends Compatible(Buuzz, Env)
+  implicit object BuuzzzEnv extends Compatible(Buuzzz, Env)
 }
 

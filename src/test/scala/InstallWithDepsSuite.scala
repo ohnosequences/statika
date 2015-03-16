@@ -1,7 +1,7 @@
 package ohnosequences.statika.tests
 
 import ohnosequences.statika._
-import ohnosequences.cosas._, AnyTypeSet._
+import ohnosequences.cosas._, typeSets._
 
 class InstallWithDepsSuite extends org.scalatest.FunSuite {
 
@@ -9,20 +9,15 @@ class InstallWithDepsSuite extends org.scalatest.FunSuite {
 
   test("Installing Bundles") {
 
-    // checking that the corresponding hierarchies produce the same towers
-    // implicitly[Qux.DepsTower ~~ Quux.DepsTower]
-    // implicitly[Buzz.DepsTower ~~ Buzzz.DepsTower]
-    // implicitly[Buuzz.DepsTower ~~ Buuzzz.DepsTower]
+    assert(Bar.installWithEnv(Env).isSuccessful)
+    assert(Foo.installWithEnv(Env).isSuccessful)
+    assert(Quux.installWithEnv(Env).isSuccessful)
+    assert(Buzzz.installWithEnv(Env).isSuccessful)
 
-    assert(Dist.installWithDeps(Bar).isSuccessful)
-    assert(Dist.installWithDeps(Foo).isSuccessful)
-    assert(Dist.installWithDeps(Quux).isSuccessful)
-    assert(Dist.installWithDeps(Buzzz).isSuccessful)
-
-    assert(Dist.installWithDeps(Qux).hasFailures)
-    assert(Dist.installWithDeps(Buzz).hasFailures)
-    assert(Dist.installWithDeps(Buuzz).hasFailures)
-    assert(Dist.installWithDeps(Buuzzz).hasFailures)
+    assert(Qux.installWithEnv(Env).hasFailures)
+    assert(Buzz.installWithEnv(Env).hasFailures)
+    assert(Buuzz.installWithEnv(Env).hasFailures)
+    assert(Buuzzz.installWithEnv(Env).hasFailures)
 
   }
 

@@ -1,3 +1,5 @@
+package ohnosequences.statika
+
 /*
 ## Installation utilities
 
@@ -5,9 +7,7 @@ This module defines convenient types for presenting installation results and met
 them.
 */
 
-package ohnosequences.statika
-
-trait InstallMethods {
+object installations {
 
   /*  ### Install result types
 
@@ -21,7 +21,7 @@ trait InstallMethods {
       each step. `InstallResults` type is just a cover on a the list of results of each installation
       step. It also contains some operations to combine such steps (i.e. their results).
   */
-  trait InstallResults{
+  trait InstallResults {
 
     val trace: List[InstallResult]
     val hasFailures: Boolean
@@ -120,4 +120,9 @@ trait InstallMethods {
     else failure(failureMsg)
   }
 
+
+  /* ### Implicit conversion from ProcessBuilder-like things to InstallResults */
+  implicit def cmdToResult[T : CmdLike](cmd: T): InstallResults = runCommand(cmd)()
+  implicit def resultsToList[T : IsResult](r: T): List[InstallResult] = r.trace
+  
 }
