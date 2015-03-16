@@ -7,7 +7,7 @@ import ohnosequences.cosas._, typeSets._
 
 class NameSuite extends org.scalatest.FunSuite { 
   object Foo {
-    case object bun extends Module()
+    case object bun extends Module(∅)
   }
   println(Foo.bun.fullName)
   println(Foo.bun.name)
@@ -15,10 +15,10 @@ class NameSuite extends org.scalatest.FunSuite {
 
 class BuhSuite extends org.scalatest.FunSuite {
 
-  case class bubun(s: String) extends Module()
+  case class bubun(s: String) extends Module(∅)
 
-  case object buh extends Module()
-  case object yeah extends Module()
+  case object buh extends Module(∅)
+  case object yeah extends Module(∅)
   case object hey extends Module(buh :~: yeah :~: ∅)
   case object limit extends Module(hey :~: ∅)
 
@@ -38,6 +38,6 @@ class BuhSuite extends org.scalatest.FunSuite {
     case object x4 extends Module(x3 :~: ∅)
 
     println(e.depsList.toString)
-    println(e.flattenDeps.toString)
+    println(e.fullDeps.toString)
   }
 }
