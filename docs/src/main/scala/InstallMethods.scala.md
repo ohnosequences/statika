@@ -1,4 +1,9 @@
 
+```scala
+package ohnosequences.statika
+```
+
+
 ## Installation utilities
 
 This module defines convenient types for presenting installation results and methods to work with
@@ -6,9 +11,7 @@ them.
 
 
 ```scala
-package ohnosequences.statika
-
-trait InstallMethods {
+object installMethods {
 ```
 
  ### Install result types
@@ -28,7 +31,7 @@ trait InstallMethods {
 
 
 ```scala
-  trait InstallResults{
+  trait InstallResults {
 
     val trace: List[InstallResult]
     val hasFailures: Boolean
@@ -144,7 +147,14 @@ trait InstallMethods {
     if(cmd.! == 0) success(successMsg)
     else failure(failureMsg)
   }
+```
 
+### Implicit conversion from ProcessBuilder-like things to InstallResults
+
+```scala
+  implicit def cmdToResult[T : CmdLike](cmd: T): InstallResults = runCommand(cmd)()
+  implicit def resultsToList[T : IsResult](r: T): List[InstallResult] = r.trace
+  
 }
 
 ```
@@ -155,26 +165,18 @@ trait InstallMethods {
 ### Index
 
 + src
-  + test
-    + scala
-      + [InstallWithDepsSuite_Aux.scala][test/scala/InstallWithDepsSuite_Aux.scala]
-      + [InstallWithDepsSuite.scala][test/scala/InstallWithDepsSuite.scala]
-      + [BundleTest.scala][test/scala/BundleTest.scala]
   + main
     + scala
-      + [ZipUnionHLists.scala][main/scala/ZipUnionHLists.scala]
-      + [DepsTower.scala][main/scala/DepsTower.scala]
-      + [Bundle.scala][main/scala/Bundle.scala]
-      + [Distribution.scala][main/scala/Distribution.scala]
-      + [package.scala][main/scala/package.scala]
+      + [Bundles.scala][main/scala/Bundles.scala]
       + [InstallMethods.scala][main/scala/InstallMethods.scala]
+  + test
+    + scala
+      + [BundleTest.scala][test/scala/BundleTest.scala]
+      + [InstallWithDepsSuite.scala][test/scala/InstallWithDepsSuite.scala]
+      + [InstallWithDepsSuite_Aux.scala][test/scala/InstallWithDepsSuite_Aux.scala]
 
-[test/scala/InstallWithDepsSuite_Aux.scala]: ../../test/scala/InstallWithDepsSuite_Aux.scala.md
-[test/scala/InstallWithDepsSuite.scala]: ../../test/scala/InstallWithDepsSuite.scala.md
-[test/scala/BundleTest.scala]: ../../test/scala/BundleTest.scala.md
-[main/scala/ZipUnionHLists.scala]: ZipUnionHLists.scala.md
-[main/scala/DepsTower.scala]: DepsTower.scala.md
-[main/scala/Bundle.scala]: Bundle.scala.md
-[main/scala/Distribution.scala]: Distribution.scala.md
-[main/scala/package.scala]: package.scala.md
+[main/scala/Bundles.scala]: Bundles.scala.md
 [main/scala/InstallMethods.scala]: InstallMethods.scala.md
+[test/scala/BundleTest.scala]: ../../test/scala/BundleTest.scala.md
+[test/scala/InstallWithDepsSuite.scala]: ../../test/scala/InstallWithDepsSuite.scala.md
+[test/scala/InstallWithDepsSuite_Aux.scala]: ../../test/scala/InstallWithDepsSuite_Aux.scala.md

@@ -2,61 +2,63 @@
 ```scala
 package ohnosequences.statika.tests
 
-import shapeless._
-import ohnosequences.statika._
-import ohnosequences.cosas._, AnyTypeSet._
+import ohnosequences.statika._, bundles._, installMethods._
+import ohnosequences.cosas._, typeSets._
+import ohnosequences.cosas.ops.typeSets._
 import sys.process._
 
 object FooBundles {
 
-  // This is a check that two towers are the same on types. Usefull for tests.
-  trait ~~[P <: HList, Q <: HList]
-  object ~~ {
-    implicit val nils = new (HNil ~~ HNil) {}
-    implicit def cons[
-      PH <: AnyTypeSet, PT <: HList
-    , QH <: AnyTypeSet, QT <: HList
-    ](implicit h: PH ~:~ QH, t: PT ~~ QT) = new ((PH :: PT) ~~ (QH :: QT)) {}
+  abstract class TestBundle[Ds <: AnyTypeSet.Of[AnyBundle]]
+    (deps:  Ds = ∅)(implicit getDepsList: ToList[Ds] { type Out = List[AnyBundle] })
+      extends Bundle(deps)(getDepsList) {
+
+    def install: InstallResults = success(name + " is installed")
   }
 
 
-  case object Bar extends Bundle()
+  case object Bar extends TestBundle(∅)
 
   case object Foo extends Bundle(Bar :~: ∅) {
-    override def install[D <: AnyDistribution](dist: D) = 
+    override def install: InstallResults = 
       "ls" #| "grep .sbt" -&- 
       "echo Foo" ->- 
       success(fullName)
   }
 
 
-  case object Quux extends Bundle(Bar :~: Foo :~: ∅) 
+  case object Quux extends TestBundle(Bar :~: Foo :~: ∅) 
   case object Qux  extends Bundle(Foo :~: Bar :~: ∅) {
 
     def dir(d: String) = new java.io.File(d)
 
-    override def install[D <: AnyDistribution](dist: D) = 
+    override def install: InstallResults = 
       Seq("echo", "bar") -&-
       "cat qux" @@ dir(".") -&- // should fail here
       "ls -al" @@ dir("/.") ->-
       success(name)
   }
 
-  case object Buzz  extends Bundle(Foo :~: Qux :~: ∅)
-  case object Buzzz extends Bundle(Quux :~: Foo :~: ∅)
+  case object Buzz  extends TestBundle(Foo :~: Qux :~: ∅)
+  case object Buzzz extends TestBundle(Quux :~: Foo :~: ∅)
 
-  case object Buuzz  extends Bundle(Bar :~: Qux :~: ∅)
-  case object Buuzzz extends Bundle(Qux :~: Bar :~: ∅)
+  case object Buuzz  extends TestBundle(Bar :~: Qux :~: ∅)
+  case object Buuzzz extends TestBundle(Qux :~: Bar :~: ∅)
 
-  val allBundles = {
-    Buzz :~: Buzzz :~: Buuzz :~: Buuzzz :~: 
-    Bar :~: Foo :~: Qux :~: Quux :~: ∅
+
+  case object Env extends Environment(∅) {
+    def install: InstallResults = success(s"Environment ${name} is set up")
   }
 
-  case object Dist extends Distribution(allBundles) {
-    def setContext = success("Distribution " + name)
-  }
 
+  implicit object BarEnv    extends Compatible(Bar, Env)
+  implicit object FooEnv    extends Compatible(Foo, Env)
+  implicit object QuuxEnv   extends Compatible(Quux, Env)
+  implicit object QuxEnv    extends Compatible(Qux, Env)
+  implicit object BuzzEnv   extends Compatible(Buzz, Env)
+  implicit object BuzzzEnv  extends Compatible(Buzzz, Env)
+  implicit object BuuzzEnv  extends Compatible(Buuzz, Env)
+  implicit object BuuzzzEnv extends Compatible(Buuzzz, Env)
 }
 
 
@@ -68,26 +70,18 @@ object FooBundles {
 ### Index
 
 + src
-  + test
-    + scala
-      + [InstallWithDepsSuite_Aux.scala][test/scala/InstallWithDepsSuite_Aux.scala]
-      + [InstallWithDepsSuite.scala][test/scala/InstallWithDepsSuite.scala]
-      + [BundleTest.scala][test/scala/BundleTest.scala]
   + main
     + scala
-      + [ZipUnionHLists.scala][main/scala/ZipUnionHLists.scala]
-      + [DepsTower.scala][main/scala/DepsTower.scala]
-      + [Bundle.scala][main/scala/Bundle.scala]
-      + [Distribution.scala][main/scala/Distribution.scala]
-      + [package.scala][main/scala/package.scala]
+      + [Bundles.scala][main/scala/Bundles.scala]
       + [InstallMethods.scala][main/scala/InstallMethods.scala]
+  + test
+    + scala
+      + [BundleTest.scala][test/scala/BundleTest.scala]
+      + [InstallWithDepsSuite.scala][test/scala/InstallWithDepsSuite.scala]
+      + [InstallWithDepsSuite_Aux.scala][test/scala/InstallWithDepsSuite_Aux.scala]
 
-[test/scala/InstallWithDepsSuite_Aux.scala]: InstallWithDepsSuite_Aux.scala.md
-[test/scala/InstallWithDepsSuite.scala]: InstallWithDepsSuite.scala.md
-[test/scala/BundleTest.scala]: BundleTest.scala.md
-[main/scala/ZipUnionHLists.scala]: ../../main/scala/ZipUnionHLists.scala.md
-[main/scala/DepsTower.scala]: ../../main/scala/DepsTower.scala.md
-[main/scala/Bundle.scala]: ../../main/scala/Bundle.scala.md
-[main/scala/Distribution.scala]: ../../main/scala/Distribution.scala.md
-[main/scala/package.scala]: ../../main/scala/package.scala.md
+[main/scala/Bundles.scala]: ../../main/scala/Bundles.scala.md
 [main/scala/InstallMethods.scala]: ../../main/scala/InstallMethods.scala.md
+[test/scala/BundleTest.scala]: BundleTest.scala.md
+[test/scala/InstallWithDepsSuite.scala]: InstallWithDepsSuite.scala.md
+[test/scala/InstallWithDepsSuite_Aux.scala]: InstallWithDepsSuite_Aux.scala.md
