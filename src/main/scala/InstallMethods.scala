@@ -7,7 +7,7 @@ This module defines convenient types for presenting installation results and met
 them.
 */
 
-object installations {
+object installMethods {
 
   /*  ### Install result types
 

@@ -20,8 +20,7 @@ the work with environment should be done there.
 
 object bundles {
 
-  import installations._
-  import environments._
+  import installMethods._
 
   import ohnosequences.cosas._, typeSets._
   import ohnosequences.cosas.ops.typeSets._
@@ -49,7 +48,7 @@ object bundles {
         So this method contains any bundle's interaction with the environment and that's why it
         requires a distribution (see also `Environment.scala`).
     */
-    def install[D <: AnyEnvironment](d: D): InstallResults
+    def install: InstallResults
   }
 
   /* ### Auxiliary stuff
@@ -66,7 +65,7 @@ object bundles {
 
     type Deps = Ds 
 
-    val depsList = getDepsList(deps)
+    lazy val depsList = getDepsList(deps)
   }
 
 
@@ -75,49 +74,55 @@ object bundles {
 
     type Deps <: AnyTypeSet.Of[AnyModule]
 
-    def install[D <: AnyEnvironment](d: D): InstallResults = success(name + " is installed")
+    final def install: InstallResults = success(name + " is installed")
   }
 
 
   abstract class Module[Ds <: AnyTypeSet.Of[AnyModule]]
     (val  deps:  Ds = ∅)
-    (implicit val getDepsList: ToList[Ds] { type Out = List[AnyBundle] }) 
+    (implicit val getDepsList: ToList[Ds] { type Out = List[AnyModule] }) 
       extends AnyModule {
 
     type Deps = Ds 
 
-    val depsList = getDepsList(deps)
+    lazy val depsList = getDepsList(deps)
+  }
+
+
+  trait AnyEnvironment extends AnyBundle {
+
+    type Deps <: AnyTypeSet.Of[AnyBundle]
+  }
+
+  abstract class Environment[Ds <: AnyTypeSet.Of[AnyEnvironment]]
+    (val  deps:  Ds = ∅)
+    (implicit val getDepsList: ToList[Ds] { type Out = List[AnyEnvironment] }) 
+      extends AnyEnvironment {
+
+    type Deps = Ds 
+
+    lazy val depsList = getDepsList(deps)
   }
 
 
   class Compatible[B <: AnyBundle, E <: AnyEnvironment](b: B, e: E)
-
-  trait AnyEnvironment {
-
-    final val fullName: String = this.getClass.getName.split("\\$").mkString(".")
-    final val name: String = fullName.split('.').last
-
-    // type Deps <: AnyTypeSet.Of[AnyEnvironment]
-
-    /* Environment may need to set some context/do checks before installation. So this method will
-       be called before any installation process.
-    */
-    def setContext: InstallResults
-  }
-
 
   implicit def bundleOps[B <: AnyBundle](b: B):
         BundleOps[B] =
     new BundleOps[B](b)
   class BundleOps[B <: AnyBundle](b: B) {
 
-    def installWithEnv[E <: AnyEnvironment](env: E)(implicit check: Compatible[B, E]) = {
-      b.flattenDeps.foldLeft( env.setContext ){ 
-        (res, x) => res -&- x.install(env) 
-      } -&- 
-      b.install(env)
+    def installWithEnv[E <: AnyEnvironment]
+      (env: E, strategy: InstallStrategy)
+      (implicit check: Compatible[B, E]): InstallResults = {
+
+      (env.flattenDeps ++ b.flattenDeps)
+        .foldLeft( success(s"Installing bundle ${b.name} with environment ${env.name}") ){
+          (res, x) => strategy(res, x.install)
+        } -&- 
+      b.install
+
     }
   }
-
 
 }

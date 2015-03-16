@@ -1,0 +1,9 @@
+This is a major release, because it introduces breaking changes.
+
+- Removed direct shapeless dependency
+- Upgraded code to the cosas v0.6.0 release
+- Moved to the package naming convention as in ohnosequences/cosas
+- Everything related to the "tower" of dependencies is removed
+- Now a bundle has only a typeset of direct dependencies and for installation it uses an untyped list
+- Bundle with default empty install method is called a _module_
+- Distributions are renamed to _environments_

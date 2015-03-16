@@ -1,6 +1,6 @@
 package ohnosequences.statika.tests
 
-import ohnosequences.statika._
+import ohnosequences.statika._, installMethods._
 import ohnosequences.cosas._, typeSets._
 
 class InstallWithDepsSuite extends org.scalatest.FunSuite {
@@ -9,15 +9,15 @@ class InstallWithDepsSuite extends org.scalatest.FunSuite {
 
   test("Installing Bundles") {
 
-    assert(Bar.installWithEnv(Env).isSuccessful)
-    assert(Foo.installWithEnv(Env).isSuccessful)
-    assert(Quux.installWithEnv(Env).isSuccessful)
-    assert(Buzzz.installWithEnv(Env).isSuccessful)
+    assert(Bar.installWithEnv(Env, failFast).isSuccessful)
+    assert(Foo.installWithEnv(Env, failFast).isSuccessful)
+    assert(Quux.installWithEnv(Env, failFast).isSuccessful)
+    assert(Buzzz.installWithEnv(Env, failFast).isSuccessful)
 
-    assert(Qux.installWithEnv(Env).hasFailures)
-    assert(Buzz.installWithEnv(Env).hasFailures)
-    assert(Buuzz.installWithEnv(Env).hasFailures)
-    assert(Buuzzz.installWithEnv(Env).hasFailures)
+    assert(Qux.installWithEnv(Env, failFast).hasFailures)
+    assert(Buzz.installWithEnv(Env, failFast).hasFailures)
+    assert(Buuzz.installWithEnv(Env, failFast).hasFailures)
+    assert(Buuzzz.installWithEnv(Env, failFast).hasFailures)
 
   }
 
