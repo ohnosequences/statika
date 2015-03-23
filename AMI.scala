@@ -7,13 +7,11 @@ to control, that all the members are installed with the same image.
 
 package ohnosequences.statika.aws
 
-import ohnosequences.statika._
+import ohnosequences.cosas._, typeSets._
+import ohnosequences.statika._, bundles._, installMethods._
 
-object AnyAMI {
-  type of[M <: AnyMetadata] = AnyAMI { type MetadataBound >: M }
-}
+abstract class AnyAMI extends Environment[∅](∅) {
 
-trait AnyAMI {
   val id: String
   val amiVersion: String
 
@@ -26,18 +24,14 @@ trait AnyAMI {
         necessary implicits for being installed with it;
       - for info about credentials see the definition of `AWSCredentials` type;
   */
-
-  type MetadataBound <: AnyMetadata
-
   def userScript(
-      md: MetadataBound
-    , distName: String
-    , bundleName: String
-    , creds: AWSCredentials = RoleCredentials
+      artifactUrl: String,
+      distName: String,
+      bundleName: String
     ): String
 
   /* This method checks that the machine on which it's called has the corresponding image. */
-  def checkID: InstallResults = {
+  def install: InstallResults = {
     import java.io._
     import java.net.URL
 
@@ -56,5 +50,4 @@ trait AnyAMI {
 }
 
 /* A constructor for ami objects */
-abstract class AMI[MB <: AnyMetadata](val id: String, val amiVersion: String) 
-  extends AnyAMI { type MetadataBound = MB }
+abstract class AMI(val id: String, val amiVersion: String) extends AnyAMI
