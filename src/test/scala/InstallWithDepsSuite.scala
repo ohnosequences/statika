@@ -1,6 +1,6 @@
 package ohnosequences.statika.tests
 
-import ohnosequences.statika._, installMethods._
+import ohnosequences.statika._, instructions._
 import ohnosequences.cosas._, typeSets._
 
 class InstallWithDepsSuite extends org.scalatest.FunSuite {

@@ -1,6 +1,6 @@
 package ohnosequences.statika.tests
 
-import ohnosequences.statika._, bundles._, installMethods._
+import ohnosequences.statika._, bundles._, instructions._
 import ohnosequences.cosas._, typeSets._
 import ohnosequences.cosas.ops.typeSets._
 import sys.process._
@@ -11,26 +11,26 @@ object FooBundles {
     (deps:  Ds = ∅)(implicit getDepsList: ToList[Ds] { type Out = List[AnyBundle] })
       extends Bundle(deps)(getDepsList) {
 
-    def install: InstallResults = success(name + " is installed")
+    def install: Results = success(name + " is installed")
   }
 
 
   case object Bar extends TestBundle(∅)
 
   case object Foo extends Bundle(Bar :~: ∅) {
-    override def install: InstallResults = 
-      "ls" #| "grep .sbt" -&- 
-      "echo Foo" ->- 
+    override def install: Results =
+      "ls" #| "grep .sbt" -&-
+      "echo Foo" ->-
       success(fullName)
   }
 
 
-  case object Quux extends TestBundle(Bar :~: Foo :~: ∅) 
+  case object Quux extends TestBundle(Bar :~: Foo :~: ∅)
   case object Qux  extends Bundle(Foo :~: Bar :~: ∅) {
 
     def dir(d: String) = new java.io.File(d)
 
-    override def install: InstallResults = 
+    override def install: Results =
       Seq("echo", "bar") -&-
       "cat qux" @@ dir(".") -&- // should fail here
       "ls -al" @@ dir("/.") ->-
@@ -45,7 +45,7 @@ object FooBundles {
 
 
   case object Env extends Environment(∅) {
-    def install: InstallResults = success(s"Environment ${name} is set up")
+    def install: Results = success(s"Environment ${name} is set up")
   }
 
 
@@ -58,4 +58,3 @@ object FooBundles {
   implicit object BuuzzEnv  extends Compatible(Buuzz, Env)
   implicit object BuuzzzEnv extends Compatible(Buuzzz, Env)
 }
-
