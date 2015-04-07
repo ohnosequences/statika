@@ -1,29 +1,28 @@
-package ohnosequences.statika.ami
+package ohnosequences.statika.aws
 
-import ohnosequences.statika._
-import ohnosequences.statika.aws._
+import ohnosequences.statika._, bundles._
 import ohnosequences.awstools.regions.Region
 
 sealed trait Arch
 case object Arch32 extends Arch { override def toString = "32" }
 case object Arch64 extends Arch { override def toString = "64" }
 
-/*  Abtract class `AmazonLinuxAMI` provides parts of the user script as it's members, so that 
+/*  Abtract class `AmazonLinuxAMI` provides parts of the user script as it's members, so that
     one can extend it and redefine behaviour, of some part, reusing others.
 */
 abstract class AmazonLinuxAMI(
     val id: String,
     val amiVersion: String
-  ) extends AnyAMI {
+  ) extends AnyAMI { ami =>
 
   val region: Region
   val arch: Arch
   val javaHeap: Int // in G
   val workingDir: String
-  
+
   /*  First of all, `initSetting` part sets up logging.
       Then it sets useful environment variables.
-  */  
+  */
   def initSetting: String = """
     |
     |# redirecting output for logging
@@ -45,7 +44,7 @@ abstract class AmazonLinuxAMI(
     |cd /root
     |export HOME="/root"
     |export PATH="/root/bin:/opt/aws/bin:$PATH"
-    |export ec2id=$(GET http://169.254.169.254/latest/meta-data/instance-id)
+    |export ec2id=$(curl http://169.254.169.254/latest/meta-data/instance-id)
     |export EC2_HOME=/opt/aws/apitools/ec2
     |export AWS_DEFAULT_REGION=$region$
     |""".stripMargin.
@@ -53,7 +52,7 @@ abstract class AmazonLinuxAMI(
       replace("$tagOk$", tag("$2")).
       replace("$tagFail$", tag("failure"))
 
-  /*  This part should make any necessary for building preparations, 
+  /*  This part should make any necessary for building preparations,
       like installing build tools: java-7 and scala-2.11.6 from rpm's
   */
   def preparing: String = """
@@ -65,22 +64,21 @@ abstract class AmazonLinuxAMI(
     |""".stripMargin
 
   /* This is the main part of the script: building applicator. */
-  def building(
-      artifactUrl: String,
-      distName: String,
-      bundleName: String
+  def building[B <: AnyBundle](
+      bundle: B,
+      metadata: AnyArtifactMetadata
     ): String = s"""
     |mkdir -p ${workingDir}
     |cd ${workingDir}
     |
     |echo "object apply extends App { " > apply.scala
-    |echo "  val results = ${distName}.installWithDeps(${bundleName}); " >> apply.scala
+    |echo "  val results = ${bundle.fullName}.installWithEnv(${ami.fullName}, ohnosequences.statika.instructions.failFast); " >> apply.scala
     |echo "  results foreach println; " >> apply.scala
     |echo "  if (results.hasFailures) sys.error(results.toString) " >> apply.scala
     |echo "}" >> apply.scala
     |cat apply.scala
     |
-    |aws s3 cp ${artifactUrl} dist.jar
+    |aws s3 cp ${metadata.artifactUrl} dist.jar
     |
     |scalac -cp dist.jar apply.scala
     |""".stripMargin
@@ -106,46 +104,45 @@ abstract class AmazonLinuxAMI(
   def fixLineEndings(s: String): String = s.replaceAll("\\r\\n", "\n").replaceAll("\\r", "\n")
 
   /* Combining all parts to one script. */
-  def userScript(
-      artifactUrl: String,
-      distName: String,
-      bundleName: String
-    ): String = fixLineEndings(
-        "#!/bin/sh \n"       + initSetting + 
-        tagStep("preparing") + preparing +
-        tagStep("building")  + building(artifactUrl, distName, bundleName) + 
-        tagStep("applying")  + applying +
-        tagStep("success")
-      )
+  def userScript[B <: AnyBundle, E >: ami.type <: AnyEnvironment]
+    (bundle: B)(implicit comp: E => Compatible[E, B]): String =
+    fixLineEndings(
+      "#!/bin/sh \n"       + initSetting +
+      tagStep("preparing") + preparing +
+      tagStep("building")  + building(bundle, comp(this).metadata) +
+      tagStep("applying")  + applying +
+      tagStep("success")
+    )
 
 }
 
 
-// Current AMIs (2014.09.2) with ephemeral storage and 64bit
+// Amazon Linux AMI 2015.03 was released on 2015-03-24
+// ephemeral storage and 64bit
 // See http://aws.amazon.com/amazon-linux-ami/
 
 object RegionMap {
   import Region._
   def amiId(region: Region): String = region match {
-      case NorthernVirginia   => "ami-b0682cd8"
-      case Oregon             => "ami-4bc29b7b"
-      case NorthernCalifornia => "ami-dc908999"
-      case Ireland            => "ami-693db01e"
-      // case Frankfurt          => "ami-6201327f"
-      case Singapore          => "ami-56ba9104"
-      case Tokyo              => "ami-32879933"
-      case Sydney             => "ami-19007423"
-      case SaoPaulo           => "ami-c99925d4"
-      // case Beijin             => "ami-881d8fb1"
-      case GovCloud           => "ami-2f32530c"
+      case NorthernVirginia   => "ami-5ccae734"
+      case Oregon             => "ami-97527ea7"
+      case NorthernCalifornia => "ami-3714f273"
+      case Ireland            => "ami-cf0897b8"
+      // case Frankfurt          => "ami-b6221fab"
+      case Singapore          => "ami-1cd8e94e"
+      case Tokyo              => "ami-d5fa0dd5"
+      case Sydney             => "ami-819cecbb"
+      case SaoPaulo           => "ami-bf2890a2"
+      // case Beijin             => "ami-f439abcd"
+      case GovCloud           => "ami-75b2d356"
     }
 }
 
-case class amzn_ami_pv_64bit(val region: Region)(
+class amzn_ami_pv_64bit(val region: Region)(
   val javaHeap: Int // in G
 ) extends AmazonLinuxAMI(
     id = RegionMap.amiId(region),
-    amiVersion = "2014.09.2"
+    amiVersion = "2015.03"
 ) {
 
   val arch = Arch64
