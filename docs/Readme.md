@@ -3,42 +3,18 @@
 This is a short tutorial for those, who want to write new Statika bundles.
 
 
-## Preparation
-
-First let's install Statika command line interface:
-
-```
-cs ohnosequences/statika-cli
-```
-
-(if you don't have `cs` installed yet, check the instructions [here](https://github.com/n8han/conscript#installation))
-
-
-## Bundle config
-
-For your convenience we created a giter8 template of a new bundle project. For generating new bundles, i.e. for filling the template, you need a bundle description in `json` format. You can get a config prefilled with default values using this command:
-
-```
-statika json foo
-```
-
-It will create a file `foo.json`. Now go to [statika-cli documentation](https://github.com/ohnosequences/statika-cli/blob/master/README.md) and there you will find description of the configuration format and other details.
-
-
 ## Generating new bundle project
 
 After you finished with json bundle description, just run
 
 ```
-statika generate foo.json
+g8 ohnosequences/statika-bundle.g8
 ```
 
-It will create `foo/` directory with a prepared sbt-project. 
+It will ask you something and create a directory with the prepared sbt-project.
 
 
 ## Declaring dependencies
-
-The command line Statika tool helps you to create a project with already declared dependencies, but in the case if you need to change it or you create a bundle manually, here is an explanation of how to manage them.
 
 The bundle dependencies appear in its sbt project and the Scala code. In the sbt part you just need to say what are the _artifacts_ of those bundles. In the code part you can say
 
@@ -58,7 +34,7 @@ Now you can go to `src/main/scala/Foo.scala` and fill `install` method — descr
 - add `import sys.process._` line
 - use either `Seq("command", "with", "parameters")` or just `"command with parameters"`
 
-`install` method returns `InstallResults` which is just a list of either positive or negative messages. To explicitly construct such result you can use two methods: `failure("something went wrong")` or `success("ok!")`. You can return several results, concatenating it: `success("did this") ::: success("did that") ::: failure("but in the end failed")`. 
+`install` method returns `InstallResults` which is just a list of either positive or negative messages. To explicitly construct such result you can use two methods: `failure("something went wrong")` or `success("ok!")`. You can return several results, concatenating it: `success("did this") ::: success("did that") ::: failure("but in the end failed")`.
 
 So try to provide useful information about failures, consider different cases, why installation process could fail, catch exceptions and return the reason, so that it will be easier to fix it later.
 
@@ -78,6 +54,19 @@ Note that anything, that can be treated as a `ProcessBuilder` from `sys.process`
 You can find more information about `InstallResults` in the [docs](src/main/scala/InstallMethods.scala.md)
 
 
+
+## Application test
+
+To try to apply the bundle to an instance, you can just run
+
+```
+sbt test
+```
+
+This should launch a small instance and run the install method of your bundle on it. But You should first take a look at the test source code, because there are some important parameters, like credentials and instance type.
+
+
+
 ## Examples
 
 All the existing public bundles live at the [github.com/statika](https://github.com/statika) org.
@@ -85,6 +74,6 @@ All the existing public bundles live at the [github.com/statika](https://github.
 
 ## Conclusion
 
-So far this is all you need to know to write simple bundles. Next step should be testing and for this you need to understand Statika environments concept (see [aws-statika docs](https://github.com/ohnosequences/aws-statika)). 
+So far this is all you need to know to write simple bundles. Next step should be testing and for this you need to understand Statika environments concept (see [aws-statika docs](https://github.com/ohnosequences/aws-statika)).
 
 See also the [bundles documentation](docs/src/main/scala/Bundles.scala.md) for more information about different bundles flavors.

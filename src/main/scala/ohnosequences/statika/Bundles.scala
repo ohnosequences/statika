@@ -104,18 +104,13 @@ object bundles {
   }
 
 
-  /* In order to install some bundle with its deps, one should declare that this bundle is
-     compatible with a particular environment and then use the `installWithEnv` method */
-  class Compatible[B <: AnyBundle, E <: AnyEnvironment](b: B, e: E)
-
   implicit def bundleOps[B <: AnyBundle](b: B):
         BundleOps[B] =
     new BundleOps[B](b)
   class BundleOps[B <: AnyBundle](b: B) {
 
     def installWithEnv[E <: AnyEnvironment]
-      (env: E, strategy: InstallStrategy)
-      (implicit check: Compatible[B, E]): Results = {
+      (env: E, strategy: InstallStrategy): Results = {
 
       (env.fullDeps ++ b.fullDeps)
         .foldLeft( success(s"Installing bundle ${b.name} with environment ${env.name}") ){
@@ -124,6 +119,25 @@ object bundles {
       b.install
 
     }
+  }
+
+  trait AnyArtifactMetadata {
+    val organization: String
+    val artifact: String
+    val version: String
+    val artifactUrl: String
+  }
+
+  class Compatible[
+    E <: AnyEnvironment,
+    B <: AnyBundle
+  ](
+    val environment: E,
+    val bundle: B,
+    val metadata: AnyArtifactMetadata
+  ) {
+    type Environment = E
+    type Bundle = B
   }
 
 }
