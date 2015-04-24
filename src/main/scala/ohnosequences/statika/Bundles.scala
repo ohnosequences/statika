@@ -128,6 +128,17 @@ object bundles {
     val artifactUrl: String
   }
 
+  trait AnyCompatible {
+
+    type Environment <: AnyEnvironment
+    val  environment: Environment
+
+    type Bundle <: AnyBundle
+    val  bundle: Bundle
+
+    val metadata: AnyArtifactMetadata
+  }
+
   class Compatible[
     E <: AnyEnvironment,
     B <: AnyBundle
@@ -135,7 +146,8 @@ object bundles {
     val environment: E,
     val bundle: B,
     val metadata: AnyArtifactMetadata
-  ) {
+  ) extends AnyCompatible {
+
     type Environment = E
     type Bundle = B
   }
