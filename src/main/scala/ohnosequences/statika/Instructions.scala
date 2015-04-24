@@ -25,7 +25,7 @@ object instructions {
 
     val trace: List[Result]
     val hasFailures: Boolean
-    val isSuccessful: Boolean = ! hasFailures
+    lazy val isSuccessful: Boolean = ! hasFailures
 
     /*  Combinators:
         * `A ->- B` — "and then": if `A` was successful, return `B`
@@ -58,6 +58,7 @@ object instructions {
       defines the appropriate combinators:
   */
   case class Success(val trace: List[Result]) extends Results {
+    
     val hasFailures = false
 
     def ->-[T : IsResult](ts: => T) = ts
@@ -70,6 +71,7 @@ object instructions {
 
   /* `Failure` represents a list of results, among which there is at least one negative: */
   case class Failure(val trace: List[Result]) extends Results {
+    
     val hasFailures = true
 
     def ->-[T : IsResult](ts: => T) = this
@@ -96,10 +98,10 @@ object instructions {
   import java.io.File
 
   // Adding method to run commands from a given path
-  implicit class SeqCWD(cmd: Seq[String]) {
+  implicit class SeqCWD(val cmd: Seq[String]) extends AnyVal {
     def @@(path: File) = Process(cmd, path, "" -> "")
   }
-  implicit class StrCWD(cmd: String) {
+  implicit class StrCWD(val cmd: String) extends AnyVal {
     def @@(path: File) = Process(cmd, path, "" -> "")
   }
 
