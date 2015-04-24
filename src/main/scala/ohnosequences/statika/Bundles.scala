@@ -18,17 +18,17 @@ object bundles {
 
   import instructions._
 
-  import ohnosequences.cosas._, typeSets._
+  import ohnosequences.cosas.typeSets._
   import ohnosequences.cosas.ops.typeSets._
 
 
   trait AnyBundle {
 
     /* Every bundle has a fully qualified name for distinction */
-    final val fullName: String = this.getClass.getName.split("\\$").mkString(".")
+    final lazy val fullName: String = this.getClass.getName.split("\\$").mkString(".")
 
     /* And a short version for convenience */
-    final val name: String = fullName.split('.').last
+    final lazy val name: String = fullName.split('.').last
 
     /* Every bundle has a list of other bundles on which this one is directly dependent */
     type Deps <: AnyTypeSet.Of[AnyBundle]
@@ -83,7 +83,7 @@ object bundles {
 
     type Deps = Ds
 
-    lazy val depsList = getDepsList(deps)
+    final lazy val depsList = getDepsList(deps)
   }
 
 
@@ -100,14 +100,14 @@ object bundles {
 
     type Deps = Ds
 
-    lazy val depsList = getDepsList(deps)
+    final lazy val depsList = getDepsList(deps)
   }
 
 
   implicit def bundleOps[B <: AnyBundle](b: B):
         BundleOps[B] =
     new BundleOps[B](b)
-  class BundleOps[B <: AnyBundle](b: B) {
+  case class BundleOps[B <: AnyBundle](b: B) extends AnyVal {
 
     def installWithEnv[E <: AnyEnvironment]
       (env: E, strategy: InstallStrategy): Results = {
