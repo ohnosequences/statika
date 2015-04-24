@@ -27,10 +27,10 @@ object bundles {
     final lazy val name: String = fullName.split('.').last
 
     /* Every bundle has a list of other bundles on which this one is directly dependent */
-    val  deps: Seq[AnyBundle]
+    val  deps: List[AnyBundle]
 
     /* That is used for building a list of all transitive dependencies */
-    lazy val fullDeps: Seq[AnyBundle] = (deps.flatMap{ _.fullDeps } ++ deps).distinct
+    lazy val fullDeps: List[AnyBundle] = (deps.flatMap{ _.fullDeps } ++ deps).distinct
 
     /* `install` method is what bundle is supposed to do:
        - if it's a _tool_, install it;
@@ -48,7 +48,7 @@ object bundles {
 
   If you want to inherit from this class _abstractly_, you need to preserve the same implicit context and then you can extend it, providing the types explicitly. See [Environment code](Environment.md) for example.
   */
-  abstract class Bundle(val deps: AnyBundle*) extends AnyBundle
+  abstract class Bundle(d: AnyBundle*) extends AnyBundle { val deps = d.toList }
 
   /* A module is just a bundle with an empty install method */
   trait AnyModule extends AnyBundle {
@@ -57,13 +57,13 @@ object bundles {
   }
 
 
-  abstract class Module(val deps: AnyModule*) extends AnyModule
+  abstract class Module(d: AnyModule*) extends AnyModule { val deps = d.toList }
 
 
   /* An environment is a bundle that is supposed to set up some context for other bundles installation */
   trait AnyEnvironment extends AnyBundle
 
-  abstract class Environment(val deps: AnyBundle*) extends AnyEnvironment
+  abstract class Environment(d: AnyBundle*) extends AnyEnvironment { val deps = d.toList }
 
   implicit def bundleOps[B <: AnyBundle](b: B):
         BundleOps[B] =
