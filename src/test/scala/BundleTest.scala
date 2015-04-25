@@ -6,8 +6,8 @@ class NameSuite extends org.scalatest.FunSuite {
   object Foo {
     case object bun extends Module
   }
-  println(Foo.bun.fullName)
-  println(Foo.bun.name)
+  println(Foo.bun.bundleFullName)
+  println(Foo.bun.bundleName)
 }
 
 class BuhSuite extends org.scalatest.FunSuite {
@@ -34,7 +34,7 @@ class BuhSuite extends org.scalatest.FunSuite {
     case object x3 extends Module(x2)
     case object x4 extends Module(x3)
 
-    println(e.fullDeps.toString)
-    println(e.fullDeps.toString)
+    println(e.bundleFullDependencies.toString)
+    println(e.bundleFullDependencies.toString)
   }
 }
