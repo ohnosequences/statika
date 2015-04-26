@@ -7,10 +7,9 @@ to control, that all the members are installed with the same image.
 
 package ohnosequences.statika.aws
 
-import ohnosequences.cosas._, typeSets._
 import ohnosequences.statika._, bundles._, instructions._
 
-abstract class AnyAMI extends Environment[∅](∅) { ami =>
+abstract class AnyAMI extends Environment() { ami =>
 
   val id: String
   val amiVersion: String
@@ -48,3 +47,17 @@ abstract class AnyAMI extends Environment[∅](∅) { ami =>
 
 /* A constructor for ami objects */
 abstract class AMI(val id: String, val amiVersion: String) extends AnyAMI
+
+trait AnyAMICompatible extends AnyCompatible {
+
+    type Environment <: AnyAMI
+}
+
+class AMICompatible[
+  E <: AnyAMI,
+  B <: AnyBundle
+](
+  environment: E,
+  bundle: B,
+  metadata: AnyArtifactMetadata
+) extends Compatible[E, B](environment, bundle, metadata) with AnyAMICompatible
