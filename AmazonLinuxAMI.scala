@@ -72,7 +72,7 @@ abstract class AmazonLinuxAMI(
     |cd ${workingDir}
     |
     |echo "object apply extends App { " > apply.scala
-    |echo "  val results = ${bundle.fullName}.installWithEnv(${ami.fullName}, ohnosequences.statika.instructions.failFast); " >> apply.scala
+    |echo "  val results = ${bundle.bundleFullName}.installWithEnv(${ami.bundleFullName}, ohnosequences.statika.instructions.failFast); " >> apply.scala
     |echo "  results foreach println; " >> apply.scala
     |echo "  if (results.hasFailures) sys.error(results.toString) " >> apply.scala
     |echo "}" >> apply.scala
