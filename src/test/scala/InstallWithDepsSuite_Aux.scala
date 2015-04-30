@@ -7,7 +7,7 @@ object FooBundles {
 
   abstract class TestBundle(d: AnyBundle*) extends Bundle(d: _*) {
 
-    def install: Results = success(name + " is installed")
+    def install: Results = success(bundleName + " is installed")
   }
 
 
@@ -17,7 +17,7 @@ object FooBundles {
     def install: Results =
       "ls" #| "grep .sbt" -&-
       "echo Foo" ->-
-      success(fullName)
+      success(bundleFullName)
   }
 
 
@@ -30,7 +30,7 @@ object FooBundles {
       Seq("echo", "bar") -&-
       "cat qux" @@ dir(".") -&- // should fail here
       "ls -al" @@ dir("/.") ->-
-      success(name)
+      success(bundleName)
   }
 
   case object Buzz  extends TestBundle(Foo, Qux)
@@ -41,7 +41,7 @@ object FooBundles {
 
 
   case object Env extends Environment {
-    def install: Results = success(s"Environment ${name} is set up")
+    def install: Results = success(s"Environment ${bundleName} is set up")
   }
 
   case object TestMetadata extends AnyArtifactMetadata {

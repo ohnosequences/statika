@@ -21,16 +21,17 @@ object bundles {
   trait AnyBundle {
 
     /* Every bundle has a fully qualified name for distinction */
-    final lazy val fullName: String = this.getClass.getName.split("\\$").mkString(".")
+    final lazy val bundleFullName: String = this.getClass.getName.split("\\$").mkString(".")
 
     /* And a short version for convenience */
-    final lazy val name: String = fullName.split('.').last
+    final lazy val bundleName: String = bundleFullName split('.') last
 
     /* Every bundle has a list of other bundles on which this one is directly dependent */
-    val  deps: List[AnyBundle]
+    val  bundleDependencies: List[AnyBundle]
 
     /* That is used for building a list of all transitive dependencies */
-    lazy val fullDeps: List[AnyBundle] = (deps.flatMap{ _.fullDeps } ++ deps).distinct
+    lazy val bundleFullDependencies: List[AnyBundle] = 
+      ( ( bundleDependencies flatMap { _.bundleFullDependencies } ) ++ bundleDependencies ).distinct
 
     /* `install` method is what bundle is supposed to do:
        - if it's a _tool_, install it;
@@ -44,28 +45,28 @@ object bundles {
   /* ### Auxiliary stuff
 
   This constructor is convenient, because it takes just a value for the bundle dependencies and sets
-  the type-members and evaluates `depsTower`.
+  the type-members and evaluates `bundleDependenciesTower`.
 
   If you want to inherit from this class _abstractly_, you need to preserve the same implicit context and then you can extend it, providing the types explicitly. See [Environment code](Environment.md) for example.
   */
-  abstract class Bundle(d: AnyBundle*) extends AnyBundle { val deps = d.toList }
+  abstract class Bundle(d: AnyBundle*) extends AnyBundle { val bundleDependencies = d.toList }
 
   /* A module is just a bundle with an empty install method */
   trait AnyModule extends AnyBundle {
 
-    final def install: Results = success(s"Module ${fullName} is installed")
+    final def install: Results = success(s"Module ${bundleFullName} is installed")
   }
 
 
-  abstract class Module(d: AnyModule*) extends AnyModule { val deps = d.toList }
+  abstract class Module(d: AnyModule*) extends AnyModule { val bundleDependencies = d.toList }
 
 
   /* An environment is a bundle that is supposed to set up some context for other bundles installation */
   trait AnyEnvironment extends AnyBundle
 
-  abstract class Environment(d: AnyBundle*) extends AnyEnvironment { val deps = d.toList }
+  abstract class Environment(d: AnyBundle*) extends AnyEnvironment { val bundleDependencies = d.toList }
 
-  implicit def bundleOps[B <: AnyBundle](b: B):
+  implicit final def bundleOps[B <: AnyBundle](b: B):
         BundleOps[B] =
     new BundleOps[B](b)
 
@@ -74,8 +75,8 @@ object bundles {
     def installWithEnv[E <: AnyEnvironment]
       (env: E, strategy: InstallStrategy): Results = {
 
-      (env.fullDeps ++ b.fullDeps)
-        .foldLeft( success(s"Installing bundle ${b.name} with environment ${env.name}") ){
+      (env.bundleFullDependencies ++ b.bundleFullDependencies)
+        .foldLeft( success(s"Installing bundle ${b.bundleName} with environment ${env.bundleName}") ){
           (res, x) => strategy(res, x.install)
         } -&-
       b.install
