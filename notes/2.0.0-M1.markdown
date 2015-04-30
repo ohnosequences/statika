@@ -1,0 +1,6 @@
+# 2.0.0-M1 release notes
+
+This is the first milestone for the 2.0 release. The main breaking changes are 
+
+- dependencies are now managed as plain lists of `AnyBundle`s
+- a new witness-based approach for recording that an environment can apply a bundle correctly
