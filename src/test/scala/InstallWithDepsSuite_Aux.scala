@@ -1,32 +1,28 @@
 package ohnosequences.statika.tests
 
 import ohnosequences.statika._, bundles._, instructions._
-import ohnosequences.cosas._, typeSets._
-import ohnosequences.cosas.ops.typeSets._
 import sys.process._
 
 object FooBundles {
 
-  abstract class TestBundle[Ds <: AnyTypeSet.Of[AnyBundle]]
-    (deps:  Ds = ∅)(implicit getDepsList: ToList[Ds] { type Out = List[AnyBundle] })
-      extends Bundle(deps)(getDepsList) {
+  abstract class TestBundle(d: AnyBundle*) extends Bundle(d: _*) {
 
-    def install: Results = success(name + " is installed")
+    def install: Results = success(bundleName + " is installed")
   }
 
 
-  case object Bar extends TestBundle(∅)
+  case object Bar extends TestBundle
 
-  case object Foo extends Bundle(Bar :~: ∅) {
+  case object Foo extends Bundle(Bar) {
     def install: Results =
       "ls" #| "grep .sbt" -&-
       "echo Foo" ->-
-      success(fullName)
+      success(bundleFullName)
   }
 
 
-  case object Quux extends TestBundle(Bar :~: Foo :~: ∅)
-  case object Qux  extends Bundle(Foo :~: Bar :~: ∅) {
+  case object Quux extends TestBundle(Bar, Foo)
+  case object Qux  extends Bundle(Foo, Bar) {
 
     def dir(d: String) = new java.io.File(d)
 
@@ -34,18 +30,18 @@ object FooBundles {
       Seq("echo", "bar") -&-
       "cat qux" @@ dir(".") -&- // should fail here
       "ls -al" @@ dir("/.") ->-
-      success(name)
+      success(bundleName)
   }
 
-  case object Buzz  extends TestBundle(Foo :~: Qux :~: ∅)
-  case object Buzzz extends TestBundle(Quux :~: Foo :~: ∅)
+  case object Buzz  extends TestBundle(Foo, Qux)
+  case object Buzzz extends TestBundle(Quux, Foo)
 
-  case object Buuzz  extends TestBundle(Bar :~: Qux :~: ∅)
-  case object Buuzzz extends TestBundle(Qux :~: Bar :~: ∅)
+  case object Buuzz  extends TestBundle(Bar, Qux)
+  case object Buuzzz extends TestBundle(Qux, Bar)
 
 
-  case object Env extends Environment(∅) {
-    def install: Results = success(s"Environment ${name} is set up")
+  case object Env extends Environment {
+    def install: Results = success(s"Environment ${bundleName} is set up")
   }
 
   case object TestMetadata extends AnyArtifactMetadata {
