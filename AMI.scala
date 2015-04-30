@@ -31,9 +31,7 @@ object amis extends Module(api) {
 
     /* This method checks that the machine on which it's called has the corresponding image. */
     def install: Results = {
-      import java.io._
-      import java.net.URL
-
+      
       try {
         
         val amiId = io.Source.fromURL(api.metadataLocalAMIIdURL).mkString
