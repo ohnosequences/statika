@@ -3,13 +3,9 @@ package ohnosequences.statika.aws
 import ohnosequences.statika._, bundles._
 import ohnosequences.awstools.regions.Region
 
-object amazonLinuxAMIs extends Module(amis) {
+object amazonLinuxAMIs extends Module(amis, api) {
 
-  import amis._
-
-  sealed trait Arch
-  case object Arch32 extends Arch { override def toString = "32" }
-  case object Arch64 extends Arch { override def toString = "64" }
+  import amis._, api._
 
   /*  Abtract class `AmazonLinuxAMI` provides parts of the user script as it's members, so that
       one can extend it and redefine behaviour, of some part, reusing others.
@@ -20,7 +16,7 @@ object amazonLinuxAMIs extends Module(amis) {
     ) extends AnyAMI { ami =>
 
     val region: Region
-    val arch: Arch
+    val arch: Architecture
     val javaHeap: Int // in G
     val workingDir: String
 
@@ -52,9 +48,9 @@ object amazonLinuxAMIs extends Module(amis) {
       |export EC2_HOME=/opt/aws/apitools/ec2
       |export AWS_DEFAULT_REGION=$region$
       |""".stripMargin.
-        replace("$region$", region.toString).
-        replace("$tagOk$", tag("$2")).
-        replace("$tagFail$", tag("failure"))
+        replace("$region$", s"${region}").
+        replace("$tagOk$", tag(api.preparing)).
+        replace("$tagFail$", tag(api.failure))
 
     /*  This part should make any necessary for building preparations,
         like installing build tools: java-7 and scala-2.11.6 from rpm's
@@ -93,11 +89,11 @@ object amazonLinuxAMIs extends Module(amis) {
       |""".stripMargin
 
     /* Instance status-tagging. */
-    def tag(state: String): String = s"""
+    def tag(state: InstanceStatus): String = s"""
       |echo
       |echo " -- ${state} -- "
       |echo
-      |aws ec2 create-tags --resources $$ec2id  --tag Key=statika-status,Value=${state} > /dev/null
+      |aws ec2 create-tags --resources $$ec2id  --tag Key=${api.statusAWSTag},Value=${state} > /dev/null
       |""".stripMargin
 
     // checks exit code of the previous step
@@ -108,16 +104,42 @@ object amazonLinuxAMIs extends Module(amis) {
     def fixLineEndings(s: String): String = s.replaceAll("\\r\\n", "\n").replaceAll("\\r", "\n")
 
     /* Combining all parts to one script. */
-    def userScript[B <: AnyBundle, E >: ami.type <: AnyEnvironment]
-      (bundle: B)(implicit comp: E => Compatible[E, B]): String =
+    def userScript[B <: AnyBundle, E >: ami.type <: AnyEnvironment](bundle: B)(implicit comp: E => Compatible[E, B]): String =
+      
       fixLineEndings(
         "#!/bin/sh \n"       + initSetting +
-        tagStep("preparing") + preparing +
-        tagStep("building")  + building(bundle, comp(this).metadata) +
-        tagStep("applying")  + applying +
-        tagStep("success")
+        tagStep(s"${api.preparing}") + preparing +
+        tagStep(s"${api.building}")  + building(bundle, comp(this).metadata) +
+        tagStep(s"${api.applying}")  + applying +
+        tagStep(s"${api.success}")
       )
+  }
 
+  object AmazonLinuxAMI {
+
+    implicit def getScriptOps[B0 <: AnyBundle, A0 <: AmazonLinuxAMI]
+      (a: A0)(implicit v: A0 => Compatible[A0, B0]): ScriptOps[B0,A0] = 
+      ScriptOps(a)(v(a))
+
+    implicit def getScriptOpsAlt[B0 <: AnyBundle, A0 <: AmazonLinuxAMI]
+      (a: A0)(implicit c: Compatible[A0, B0]): ScriptOps[B0,A0] = 
+      ScriptOps(a)
+
+    case class ScriptOps[B <: AnyBundle, A <: AmazonLinuxAMI](val a: A)(implicit val comp: Compatible[A,B]) {
+
+      final def userScript(bundle: B): String = 
+        a.fixLineEndings(
+          "#!/bin/sh \n"                      + 
+          a.initSetting                       +
+          a.tagStep(s"${api.preparing}")      + 
+          a.preparing                         +
+          a.tagStep(s"${api.building}")       + 
+          a.building(bundle, comp.metadata)   +
+          a.tagStep(s"${api.applying}")       + 
+          a.applying                          +
+          a.tagStep(s"${api.success}")
+        )
+    }
   }
 
 
@@ -149,7 +171,7 @@ object amazonLinuxAMIs extends Module(amis) {
       amiVersion = "2015.03"
   ) {
 
-    val arch = Arch64
+    val arch = x64
     val workingDir = "/media/ephemeral0/applicator"
   }
 

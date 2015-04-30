@@ -30,7 +30,7 @@ object amis extends Module(api) {
       (bundle: B)(implicit comp: E => Compatible[E, B]): String
 
     /* This method checks that the machine on which it's called has the corresponding image. */
-    def install: Results = {
+    final def install: Results = {
       
       try {
         
