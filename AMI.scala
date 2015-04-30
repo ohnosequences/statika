@@ -39,12 +39,17 @@ object amis extends Module(api) {
         val amiId = io.Source.fromURL(api.metadataLocalAMIIdURL).mkString
 
         if (amiId == id)
-          success("Checked that Amazon Machine Image is " + id)
+          success(s"Checked that the Amazon Machine Image id is ${id}")
         else
-          failure("AMI should be "+ id +", instead of "+ ami)
-          
+          failure(s"AMI should be ${id}. Found ${amiId}")
+
       } catch {
-        case t : Throwable => failure("Couldn't check AMI id because of "+t.toString)
+
+        case ct: scala.util.control.ControlThrowable => 
+          throw ct
+        
+        case e:  Exception => 
+          failure(s"Couldn't check AMI id because of ${e}")
       }
     }
 
