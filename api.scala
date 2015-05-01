@@ -20,5 +20,4 @@ object api extends Module {
   case object applying  extends InstanceStatus
   case object success   extends InstanceStatus
   case object failure   extends InstanceStatus
-
 }

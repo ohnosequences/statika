@@ -97,9 +97,9 @@ object amazonLinuxAMIs extends Module(amis, api) {
       |""".stripMargin
 
     // checks exit code of the previous step
-    def tagStep(state: String) = """
+    def tagStep(state: String): String = """
       |tagStep $? $state$
-      |""".stripMargin.replace("$state$", state)
+      |""".stripMargin.replaceAll("$state$", state)
 
     def fixLineEndings(s: String): String = s.replaceAll("\\r\\n", "\n").replaceAll("\\r", "\n")
 
@@ -164,7 +164,7 @@ object amazonLinuxAMIs extends Module(amis, api) {
       }
   }
 
-  class amzn_ami_pv_64bit(val region: Region)(
+  case class amzn_ami_pv_64bit(val region: Region)(
     val javaHeap: Int // in G
   ) extends AmazonLinuxAMI(
       id = RegionMap.amiId(region),
@@ -176,8 +176,6 @@ object amazonLinuxAMIs extends Module(amis, api) {
   }
 
 }
-
-
 
 // TODO: make it dependent on instance type and choose PV or HVM
 // See http://aws.amazon.com/amazon-linux-ami/instance-type-matrix/
