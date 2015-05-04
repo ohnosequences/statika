@@ -23,7 +23,7 @@ object amazonLinuxAMIs extends Module(amis, api) {
     /*  First of all, `initSetting` part sets up logging.
         Then it sets useful environment variables.
     */
-    def initSetting: String = """
+    private def initSetting: String = """
       |
       |# redirecting output for logging
       |exec &> /log.txt
@@ -55,7 +55,7 @@ object amazonLinuxAMIs extends Module(amis, api) {
     /*  This part should make any necessary for building preparations,
         like installing build tools: java-7 and scala-2.11.6 from rpm's
     */
-    def preparing: String = """
+    private def preparing: String = """
       |aws s3 cp s3://resources.ohnosequences.com/scala-2.11.6.rpm scala-2.11.6.rpm
       |yum -y install java-1.8.0-openjdk-devel.x86_64
       |yum -y remove java-1.7.0-openjdk
@@ -63,7 +63,7 @@ object amazonLinuxAMIs extends Module(amis, api) {
       |""".stripMargin
 
     /* This is the main part of the script: building applicator. */
-    def building[B <: AnyBundle](
+    private def building[B <: AnyBundle](
         bundle: B,
         metadata: AnyArtifactMetadata
       ): String = s"""
@@ -83,12 +83,12 @@ object amazonLinuxAMIs extends Module(amis, api) {
       |""".stripMargin
 
     /* Just running what we built. */
-    def applying: String = s"""
+    private def applying: String = s"""
       |java -d${arch} -Xmx${javaHeap}G -cp .:dist.jar apply
       |""".stripMargin
 
     /* Instance status-tagging. */
-    def tag(state: InstanceStatus): String = s"""
+    private def tag(state: InstanceStatus): String = s"""
       |echo
       |echo " -- ${state} -- "
       |echo
@@ -96,35 +96,27 @@ object amazonLinuxAMIs extends Module(amis, api) {
       |""".stripMargin
 
     // checks exit code of the previous step
-    def tagStep(state: String): String = """
+    private def tagStep(state: String): String = """
       |tagStep $? $state$
       |""".stripMargin.replaceAll("$state$", state)
 
-    def fixLineEndings(s: String): String = s.replaceAll("\\r\\n", "\n").replaceAll("\\r", "\n")
-
-    /* Combining all parts to one script. */
-    def userScript[B <: AnyBundle, E >: ami.type <: AnyEnvironment](bundle: B)(implicit comp: E => Compatible[E, B]): String =
-      
-      fixLineEndings(
-        "#!/bin/sh \n"       + initSetting +
-        tagStep(s"${api.preparing}") + preparing +
-        tagStep(s"${api.building}")  + building(bundle, comp(this).metadata) +
-        tagStep(s"${api.applying}")  + applying +
-        tagStep(s"${api.success}")
-      )
+    private def fixLineEndings(s: String): String = s.replaceAll("\\r\\n", "\n").replaceAll("\\r", "\n")
   }
 
   object AmazonLinuxAMI {
 
-    implicit def getScriptOps[B0 <: AnyBundle, A0 <: AmazonLinuxAMI]
-      (a: A0)(implicit v: A0 => Compatible[A0, B0]): ScriptOps[B0,A0] = 
-      ScriptOps(a)(v(a))
+    implicit final def getAmazonLinuxAMIOps[B0 <: AnyBundle, A0 <: AmazonLinuxAMI]
+      (a: A0)(implicit v: A0 => Compatible[A0, B0]): AmazonLinuxAMIOps[B0,A0] = 
+      AmazonLinuxAMIOps(a)(v(a))
 
-    implicit def getScriptOpsAlt[B0 <: AnyBundle, A0 <: AmazonLinuxAMI]
-      (a: A0)(implicit c: Compatible[A0, B0]): ScriptOps[B0,A0] = 
-      ScriptOps(a)
+    implicit final def getAmazonLinuxAMIOpsAlt[B0 <: AnyBundle, A0 <: AmazonLinuxAMI]
+      (a: A0)(implicit c: Compatible[A0, B0]): AmazonLinuxAMIOps[B0,A0] = 
+      AmazonLinuxAMIOps(a)
 
-    case class ScriptOps[B <: AnyBundle, A <: AmazonLinuxAMI](val a: A)(implicit val comp: Compatible[A,B]) {
+    import ohnosequences.awstools.ec2._
+    import com.amazonaws.auth.profile._
+    
+    case class AmazonLinuxAMIOps[B <: AnyBundle, A <: AmazonLinuxAMI](val a: A)(implicit val comp: Compatible[A,B]) {
 
       final def userScript(bundle: B): String = 
         a.fixLineEndings(
@@ -138,6 +130,21 @@ object amazonLinuxAMIs extends Module(amis, api) {
           a.applying                          +
           a.tagStep(s"${api.success}")
         )
+
+      final def instanceSpecsFor(bundle: B)(
+        instanceType: InstanceType,
+        keyPair: String,
+        role: Option[String]
+      )
+      : InstanceSpecs = 
+        InstanceSpecs(
+          instanceType = instanceType,
+          amiId = a.id,
+          keyName = keyPair,
+          userData = userScript(bundle),
+          instanceProfile = role
+        )
+
     }
   }
 
@@ -170,8 +177,8 @@ object amazonLinuxAMIs extends Module(amis, api) {
       amiVersion = "2015.03"
   ) {
 
-    val arch = x64
-    val workingDir = "/media/ephemeral0/applicator"
+    lazy val arch = x64
+    lazy val workingDir = "/media/ephemeral0/applicator"
   }
 
 }
