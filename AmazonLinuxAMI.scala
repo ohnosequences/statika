@@ -56,11 +56,10 @@ object amazonLinuxAMIs extends Module(amis, api) {
         like installing build tools: java-7 and scala-2.11.6 from rpm's
     */
     def preparing: String = """
-      |aws s3 cp s3://resources.ohnosequences.com/java7-oracle.rpm java7-oracle.rpm
       |aws s3 cp s3://resources.ohnosequences.com/scala-2.11.6.rpm scala-2.11.6.rpm
-      |yum install -y java7-oracle.rpm scala-2.11.6.rpm
-      |alternatives --install /usr/bin/java java /usr/java/default/bin/java 99999
-      |alternatives --auto java
+      |yum -y install java-1.8.0-openjdk-devel.x86_64
+      |yum -y remove java-1.7.0-openjdk
+      |yum -y install scala-2.11.6.rpm
       |""".stripMargin
 
     /* This is the main part of the script: building applicator. */

@@ -12,7 +12,7 @@ import ohnosequences.statika._, bundles._, instructions._
 object amis extends Module(api) {
 
 
-  abstract class AnyAMI extends Environment() { ami =>
+  abstract class AnyAMI extends Environment { ami =>
 
     val id: String
     val amiVersion: String
