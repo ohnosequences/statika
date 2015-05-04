@@ -105,10 +105,6 @@ object amazonLinuxAMIs extends Module(amis, api) {
 
   object AmazonLinuxAMI {
 
-    implicit final def getAmazonLinuxAMIOps[B0 <: AnyBundle, A0 <: AmazonLinuxAMI]
-      (a: A0)(implicit v: A0 => Compatible[A0, B0]): AmazonLinuxAMIOps[B0,A0] = 
-      AmazonLinuxAMIOps(a)(v(a))
-
     implicit final def getAmazonLinuxAMIOpsAlt[B0 <: AnyBundle, A0 <: AmazonLinuxAMI]
       (a: A0)(implicit c: Compatible[A0, B0]): AmazonLinuxAMIOps[B0,A0] = 
       AmazonLinuxAMIOps(a)
