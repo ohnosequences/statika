@@ -20,9 +20,9 @@ object amis extends Module(api) {
     // TODO why not put all the Java/Scala install here?
     /* This method checks that the machine on which it's called has the corresponding image. */
     final def install: Results = {
-      
+
       try {
-        
+
         val amiId = io.Source.fromURL(api.metadataLocalAMIIdURL).mkString
 
         if (amiId == id)
@@ -32,10 +32,10 @@ object amis extends Module(api) {
 
       } catch {
 
-        case ct: scala.util.control.ControlThrowable => 
+        case ct: scala.util.control.ControlThrowable =>
           throw ct
-        
-        case e:  Exception => 
+
+        case e:  Exception =>
           failure(s"Couldn't check AMI id because of ${e}")
       }
     }
@@ -46,5 +46,6 @@ object amis extends Module(api) {
   abstract class AMI(val id: String, val amiVersion: String) extends AnyAMI
 
   // no need to add a new trait here
+  type AnyAMICompatible = AnyCompatible { type Environment <: AnyAMI }
   type AMICompatible[E <: AnyAMI, B <: AnyBundle] = Compatible[E,B]
 }

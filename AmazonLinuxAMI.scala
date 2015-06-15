@@ -3,6 +3,9 @@ package ohnosequences.statika.aws
 import ohnosequences.statika._, bundles._
 import ohnosequences.awstools.regions.Region
 
+import ohnosequences.awstools.ec2._
+import com.amazonaws.auth.profile._
+
 object amazonLinuxAMIs extends Module(amis, api) {
 
   import amis._, api._
@@ -23,7 +26,7 @@ object amazonLinuxAMIs extends Module(amis, api) {
     /*  First of all, `initSetting` part sets up logging.
         Then it sets useful environment variables.
     */
-    private def initSetting: String = """
+    private def initSetting: String = s"""
       |
       |# redirecting output for logging
       |exec &> /log.txt
@@ -34,50 +37,53 @@ object amazonLinuxAMIs extends Module(amis, api) {
       |ln -s /log.txt /root/log.txt
       |
       |function tagStep(){
-      |  if [ $1 = 0 ]; then
-      |    $tagOk$
+      |  if [ $$1 = 0 ]; then
+      |    echo
+      |    echo " -- $$2 -- "
+      |    echo
+      |    aws ec2 create-tags --region ${region.toString} --resources $$ec2id  --tag Key=${api.statusAWSTag},Value=$$2 > /dev/null
       |  else
-      |    $tagFail$
+      |    echo
+      |    echo " -- failure -- "
+      |    echo
+      |    aws ec2 create-tags --region ${region.toString} --resources $$ec2id  --tag Key=${api.statusAWSTag},Value=failure > /dev/null
       |  fi
       |}
       |
       |cd /root
       |export HOME="/root"
-      |export PATH="/root/bin:/opt/aws/bin:$PATH"
-      |export ec2id=$(curl http://169.254.169.254/latest/meta-data/instance-id)
+      |export PATH="/root/bin:/opt/aws/bin:$$PATH"
+      |export ec2id=$$(curl http://169.254.169.254/latest/meta-data/instance-id)
       |export EC2_HOME=/opt/aws/apitools/ec2
-      |export AWS_DEFAULT_REGION=$region$
-      |""".stripMargin.
-        replace("$region$", s"${region}").
-        replace("$tagOk$", tag(api.preparing)).
-        replace("$tagFail$", tag(api.failure))
+      |export AWS_DEFAULT_REGION=${region.toString}
+      |""".stripMargin
+
+    // checks exit code of the previous step
+    private def tagStep(state: InstanceStatus): String = s"tagStep $$? ${state}"
 
     /*  This part should make any necessary for building preparations,
         like installing build tools: java-7 and scala-2.11.6 from rpm's
     */
-    private def preparing: String = """
-      |aws s3 cp s3://resources.ohnosequences.com/scala-2.11.6.rpm scala-2.11.6.rpm
+    private def preparing: String = s"""
+      |aws s3 cp --region ${region.toString} s3://resources.ohnosequences.com/scala-2.11.6.rpm scala-2.11.6.rpm
       |yum -y install java-1.8.0-openjdk-devel.x86_64
       |yum -y remove java-1.7.0-openjdk
       |yum -y install scala-2.11.6.rpm
       |""".stripMargin
 
     /* This is the main part of the script: building applicator. */
-    private def building[B <: AnyBundle](
-        bundle: B,
-        metadata: AnyArtifactMetadata
-      ): String = s"""
+    private def building[C <: AnyCompatible](comp: C): String = s"""
       |mkdir -p ${workingDir}
       |cd ${workingDir}
       |
       |echo "object apply extends App { " > apply.scala
-      |echo "  val results = ${bundle.bundleFullName}.installWithEnv(${ami.bundleFullName}, ohnosequences.statika.instructions.failFast); " >> apply.scala
+      |echo "  val results = ${comp.fullName}.install(ohnosequences.statika.instructions.failFast); " >> apply.scala
       |echo "  results foreach println; " >> apply.scala
       |echo "  if (results.hasFailures) sys.error(results.toString) " >> apply.scala
       |echo "}" >> apply.scala
       |cat apply.scala
       |
-      |aws s3 cp ${metadata.artifactUrl} dist.jar
+      |aws s3 cp --region ${region.toString} ${comp.metadata.artifactUrl} dist.jar
       |
       |scalac -cp dist.jar apply.scala
       |""".stripMargin
@@ -87,61 +93,59 @@ object amazonLinuxAMIs extends Module(amis, api) {
       |java -d${arch} -Xmx${javaHeap}G -cp .:dist.jar apply
       |""".stripMargin
 
-    /* Instance status-tagging. */
-    private def tag(state: InstanceStatus): String = s"""
-      |echo
-      |echo " -- ${state} -- "
-      |echo
-      |aws ec2 create-tags --resources $$ec2id  --tag Key=${api.statusAWSTag},Value=${state} > /dev/null
-      |""".stripMargin
-
-    // checks exit code of the previous step
-    private def tagStep(state: String): String = """
-      |tagStep $? $state$
-      |""".stripMargin.replaceAll("$state$", state)
+    // /* Instance status-tagging. */
+    // private def tag(state: InstanceStatus): String = s"""
+    //   |echo
+    //   |echo " -- ${state} -- "
+    //   |echo
+    //   |aws ec2 create-tags --region ${region.toString} --resources $$ec2id  --tag Key=${api.statusAWSTag},Value=${state} > /dev/null
+    //   |""".stripMargin
 
     private def fixLineEndings(s: String): String = s.replaceAll("\\r\\n", "\n").replaceAll("\\r", "\n")
+
+    final def userScript[C <: AnyCompatible](comp: C): String =
+      fixLineEndings(
+        "#!/bin/sh \n" +
+        initSetting +
+        tagStep(api.preparing) +
+        preparing +
+        tagStep(api.building) +
+        building(comp) +
+        tagStep(api.applying) +
+        applying +
+        tagStep(api.success)
+      )
+
+    final def instanceSpecs[C <: AnyCompatible](comp: C)(
+      instanceType: InstanceType,
+      keyPair: String,
+      role: Option[String]
+    ): InstanceSpecs =
+       InstanceSpecs(
+         instanceType = instanceType,
+         amiId = id,
+         keyName = keyPair,
+         userData = userScript(comp),
+         instanceProfile = role
+       )
   }
 
-  object AmazonLinuxAMI {
+  type AnyAmazonLinuxAMICompatible = AnyCompatible { type Environment <: AmazonLinuxAMI }
 
-    implicit final def getAmazonLinuxAMIOpsAlt[B0 <: AnyBundle, A0 <: AmazonLinuxAMI]
-      (a: A0)(implicit c: Compatible[A0, B0]): AmazonLinuxAMIOps[B0,A0] = 
-      AmazonLinuxAMIOps(a)
+  implicit def amazonLinuxAMIOps[C <: AnyAmazonLinuxAMICompatible]
+    (comp: C): AmazonLinuxAMIOps[C] = AmazonLinuxAMIOps(comp)
 
-    import ohnosequences.awstools.ec2._
-    import com.amazonaws.auth.profile._
-    
-    case class AmazonLinuxAMIOps[B <: AnyBundle, A <: AmazonLinuxAMI](val a: A)(implicit val comp: Compatible[A,B]) {
+  case class AmazonLinuxAMIOps[C <: AnyAmazonLinuxAMICompatible](val comp: C) {
+    val ami = comp.environment
 
-      final def userScript(bundle: B): String = 
-        a.fixLineEndings(
-          "#!/bin/sh \n"                      + 
-          a.initSetting                       +
-          a.tagStep(s"${api.preparing}")      + 
-          a.preparing                         +
-          a.tagStep(s"${api.building}")       + 
-          a.building(bundle, comp.metadata)   +
-          a.tagStep(s"${api.applying}")       + 
-          a.applying                          +
-          a.tagStep(s"${api.success}")
-        )
+    def userScript: String = ami.userScript(comp)
 
-      final def instanceSpecsFor(bundle: B)(
-        instanceType: InstanceType,
-        keyPair: String,
-        role: Option[String]
-      )
-      : InstanceSpecs = 
-        InstanceSpecs(
-          instanceType = instanceType,
-          amiId = a.id,
-          keyName = keyPair,
-          userData = userScript(bundle),
-          instanceProfile = role
-        )
+    def instanceSpecs(
+      instanceType: InstanceType,
+      keyPair: String,
+      role: Option[String]
+    ): InstanceSpecs = ami.instanceSpecs(comp)(instanceType, keyPair, role)
 
-    }
   }
 
 
