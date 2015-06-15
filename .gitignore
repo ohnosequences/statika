@@ -23,10 +23,8 @@ artifacts/
 data/in/
 data/out/
 
-# credentials
-*Credentials*
-credentials.sbt
-
 *.yml
 
-.tags
+.tags*
+.atom*
+.ensime*

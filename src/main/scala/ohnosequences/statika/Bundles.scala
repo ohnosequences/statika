@@ -30,7 +30,7 @@ object bundles {
     val  bundleDependencies: List[AnyBundle]
 
     /* That is used for building a list of all transitive dependencies */
-    lazy val bundleFullDependencies: List[AnyBundle] = 
+    lazy val bundleFullDependencies: List[AnyBundle] =
       ( ( bundleDependencies flatMap { _.bundleFullDependencies } ) ++ bundleDependencies ).distinct
 
     /* `install` method is what bundle is supposed to do:
@@ -66,22 +66,22 @@ object bundles {
 
   abstract class Environment(d: AnyBundle*) extends AnyEnvironment { val bundleDependencies = d.toList }
 
-  implicit final def bundleOps[B <: AnyBundle](b: B):
-        BundleOps[B] =
-    new BundleOps[B](b)
-
-  case class BundleOps[B <: AnyBundle](b: B) extends AnyVal {
-
-    def installWithEnv[E <: AnyEnvironment]
-      (env: E, strategy: InstallStrategy): Results = {
-
-      (env.bundleFullDependencies ++ b.bundleFullDependencies)
-        .foldLeft( success(s"Installing bundle ${b.bundleName} with environment ${env.bundleName}") ){
-          (res, x) => strategy(res, x.install)
-        } -&-
-      b.install
-    }
-  }
+  // implicit final def bundleOps[B <: AnyBundle](b: B):
+  //       BundleOps[B] =
+  //   new BundleOps[B](b)
+  //
+  // case class BundleOps[B <: AnyBundle](b: B) extends AnyVal {
+  //
+  //   def installWithEnv[C <: AnyCompatible]
+  //     (comp: C, strategy: InstallStrategy): Results = {
+  //
+  //     (comp.environment.bundleFullDependencies ++ b.bundleFullDependencies)
+  //       .foldLeft( success(s"Installing bundle ${b.bundleName} with environment ${comp.environment.bundleName}") ){
+  //         (res, x) => strategy(res, x.install)
+  //       } -&-
+  //     b.install
+  //   }
+  // }
 
   trait AnyArtifactMetadata {
     val organization: String
@@ -92,6 +92,9 @@ object bundles {
 
   trait AnyCompatible {
 
+    final lazy val fullName: String = this.getClass.getName.split("\\$").mkString(".")
+    final lazy val name: String = fullName split('.') last
+
     type Environment <: AnyEnvironment
     val  environment: Environment
 
@@ -99,13 +102,21 @@ object bundles {
     val  bundle: Bundle
 
     val metadata: AnyArtifactMetadata
+
+    def install(strategy: InstallStrategy): Results = {
+
+      (environment.bundleFullDependencies ++ bundle.bundleFullDependencies)
+        .foldLeft( success(s"Installing bundle ${bundle.bundleName} with environment ${environment.bundleName}") ){
+          (res, x) => strategy(res, x.install)
+        } -&-
+      bundle.install
+    }
   }
 
-  class Compatible[
+  abstract class Compatible[
     E <: AnyEnvironment,
     B <: AnyBundle
-  ](
-    val environment: E,
+  ](val environment: E,
     val bundle: B,
     val metadata: AnyArtifactMetadata
   ) extends AnyCompatible {
