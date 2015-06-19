@@ -4,7 +4,7 @@ import ohnosequences.statika.bundles._
 import java.net.URL
 
 object api extends Module {
-  
+
   val statusAWSTag = "statika-status"
 
   lazy val metadataLocalURL      = new URL("http://169.254.169.254/latest/meta-data")
@@ -20,4 +20,8 @@ object api extends Module {
   case object applying  extends InstanceStatus
   case object success   extends InstanceStatus
   case object failure   extends InstanceStatus
+
+  sealed trait Virtualization
+  case object PV extends Virtualization
+  case object HVM extends Virtualization
 }

@@ -19,6 +19,7 @@ object amazonLinuxAMIs extends Module(amis, api) {
     ) extends AnyAMI { ami =>
 
     val region: Region
+    val virt: Virtualization
     val arch: Architecture
     val javaHeap: Int // in G
     val workingDir: String
@@ -152,28 +153,60 @@ object amazonLinuxAMIs extends Module(amis, api) {
   // Amazon Linux AMI 2015.03 was released on 2015-03-24
   // ephemeral storage and 64bit
   // See http://aws.amazon.com/amazon-linux-ami/
-
-  object RegionMap {
+  object amiMap {
     import Region._
-    def amiId(region: Region): String = region match {
-        case NorthernVirginia   => "ami-5ccae734"
-        case Oregon             => "ami-97527ea7"
-        case NorthernCalifornia => "ami-3714f273"
-        case Ireland            => "ami-cf0897b8"
-        // case Frankfurt          => "ami-b6221fab"
-        case Singapore          => "ami-1cd8e94e"
-        case Tokyo              => "ami-d5fa0dd5"
-        case Sydney             => "ami-819cecbb"
-        case SaoPaulo           => "ami-bf2890a2"
-        // case Beijin             => "ami-f439abcd"
-        case GovCloud           => "ami-75b2d356"
+    def id(region: Region, virt: Virtualization): String = region match {
+      case NorthernVirginia   => virt match {
+        case HVM => "ami-28cae740"
+        case PV  => "ami-75b2d356"
       }
+      case Oregon             => virt match {
+        case HVM => "ami-9f527eaf"
+        case PV  => "ami-75b2d356"
+      }
+      case NorthernCalifornia => virt match {
+        case HVM => "ami-3b14f27f"
+        case PV  => "ami-75b2d356"
+      }
+      case Ireland            => virt match {
+        case HVM => "ami-c90897be"
+        case PV  => "ami-75b2d356"
+      }
+      // case Frankfurt          => virt match {
+      //   case HVM => "ami-b0221fad"
+      //   case PV  => "ami-75b2d356"
+      // }
+      case Singapore          => virt match {
+        case HVM => "ami-32d8e960"
+        case PV  => "ami-75b2d356"
+      }
+      case Tokyo              => virt match {
+        case HVM => "ami-ddfa0ddd"
+        case PV  => "ami-75b2d356"
+      }
+      case Sydney             => virt match {
+        case HVM => "ami-fb9cecc1"
+        case PV  => "ami-75b2d356"
+      }
+      case SaoPaulo           => virt match {
+        case HVM => "ami-bd2890a0"
+        case PV  => "ami-75b2d356"
+      }
+      // case Beijin             => virt match {
+      //   case HVM => "ami-f639abcf"
+      //   case PV  => "ami-75b2d356"
+      // }
+      case GovCloud           => virt match {
+        case HVM => "ami-7db2d35e"
+        case PV  => "ami-75b2d356"
+      }
+    }
   }
 
-  case class amzn_ami_pv_64bit(val region: Region)(
+  case class amzn_ami_64bit(val region: Region, val virt: Virtualization)(
     val javaHeap: Int // in G
   ) extends AmazonLinuxAMI(
-      id = RegionMap.amiId(region),
+      id = amiMap.id(region, virt),
       amiVersion = "2015.03"
   ) {
 
