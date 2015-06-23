@@ -1,3 +1,5 @@
+package ohnosequences.statika
+
 /*
 ## Installation utilities
 
@@ -5,9 +7,7 @@ This module defines convenient types for presenting installation results and met
 them.
 */
 
-package ohnosequences.statika
-
-trait InstallMethods {
+object instructions {
 
   /*  ### Install result types
 
@@ -15,17 +15,17 @@ trait InstallMethods {
   */
   type FailureMessage = String
   type SuccessMessage = String
-  type InstallResult = Either[FailureMessage, SuccessMessage]
+  type Result = Either[FailureMessage, SuccessMessage]
 
   /*  As the installation process consists of a sequence of steps, we want to know the result of
-      each step. `InstallResults` type is just a cover on a the list of results of each installation
+      each step. `Results` type is just a cover on a the list of results of each installation
       step. It also contains some operations to combine such steps (i.e. their results).
   */
-  trait InstallResults{
+  trait Results {
 
-    val trace: List[InstallResult]
+    val trace: List[Result]
     val hasFailures: Boolean
-    val isSuccessful: Boolean = ! hasFailures
+    lazy val isSuccessful: Boolean = ! hasFailures
 
     /*  Combinators:
         * `A ->- B` — "and then": if `A` was successful, return `B`
@@ -33,22 +33,22 @@ trait InstallMethods {
         * `A -|- B` — "or": irrespectively of `A` result, append it to `B`
 
         Note that the second argument is lazy and it can be anything that can be converted to
-        `InstallResults`.
-    */    
-    def ->-[T : IsResult](ts: => T): InstallResults
-    def -&-[T : IsResult](ts: => T): InstallResults
-    def -|-[T : IsResult](ts: => T): InstallResults
+        `Results`.
+    */
+    def ->-[T : IsResult](ts: => T): Results
+    def -&-[T : IsResult](ts: => T): Results
+    def -|-[T : IsResult](ts: => T): Results
 
   }
 
   // Type alias for context bounds (instead of view bounds)
-  type IsResult[T] = T => InstallResults
+  type IsResult[T] = T => Results
 
   /*  Type alias which can be used for folding of install results. Particularly, it is used in the
       `Distribution` method `installWithDeps`, as the way of traversing the list of dependencies is
       important there.
   */
-  type InstallStrategy = (InstallResults, InstallResults) => InstallResults 
+  type InstallStrategy = (Results, Results) => Results
   val failFast:     InstallStrategy = _ -&- _
   val failTolerant: InstallStrategy = _ -|- _
 
@@ -56,12 +56,13 @@ trait InstallMethods {
   /*  Now, we want not just to operate on a list of results, but to have an indicator of how things
       are going for the whole list. `Success` represents a list, where all results are positive and
       defines the appropriate combinators:
-  */  
-  case class Success(val trace: List[InstallResult]) extends InstallResults { 
+  */
+  case class Success(val trace: List[Result]) extends Results {
+    
     val hasFailures = false
 
     def ->-[T : IsResult](ts: => T) = ts
-    def -&-[T : IsResult](ts: => T) = implicitly[InstallResults](ts) match {
+    def -&-[T : IsResult](ts: => T) = implicitly[Results](ts) match {
       case Success(tr) => Success(trace ::: tr)
       case Failure(tr) => Failure(trace ::: tr)
     }
@@ -69,25 +70,26 @@ trait InstallMethods {
   }
 
   /* `Failure` represents a list of results, among which there is at least one negative: */
-  case class Failure(val trace: List[InstallResult]) extends InstallResults { 
+  case class Failure(val trace: List[Result]) extends Results {
+    
     val hasFailures = true
 
     def ->-[T : IsResult](ts: => T) = this
     def -&-[T : IsResult](ts: => T) = this
-    def -|-[T : IsResult](ts: => T) = implicitly[InstallResults](ts) match {
+    def -|-[T : IsResult](ts: => T) = implicitly[Results](ts) match {
       case Success(tr) => Success(trace ::: tr)
       case Failure(tr) => Failure(trace ::: tr)
     }
   }
-  
-  /*  For backwards compatibility and for convenience, there are simple "constructors" for the 
-      `InstallResults` instances. You can think of `InstallResults` just as about _lists of 
-      messages_ and as they are (implicitly) convertible to `List`, use all normal list operations 
+
+  /*  For backwards compatibility and for convenience, there are simple "constructors" for the
+      `Results` instances. You can think of `Results` just as about _lists of
+      messages_ and as they are (implicitly) convertible to `List`, use all normal list operations
       on them. But be careful: if you combine them, better use the predefined combinators: `->-`,
       `-&-` and `-|-`, as they will preserve the sense of the installation process overall result.
   */
-  def success(msg: SuccessMessage): InstallResults = Success(List(Right(msg)))
-  def failure(msg: FailureMessage): InstallResults = Failure(List(Left(msg)))
+  def success(msg: SuccessMessage): Results = Success(List(Right(msg)))
+  def failure(msg: FailureMessage): Results = Failure(List(Left(msg)))
 
 
 
@@ -96,10 +98,10 @@ trait InstallMethods {
   import java.io.File
 
   // Adding method to run commands from a given path
-  implicit class SeqCWD(cmd: Seq[String]) {
+  implicit class SeqCWD(val cmd: Seq[String]) extends AnyVal {
     def @@(path: File) = Process(cmd, path, "" -> "")
   }
-  implicit class StrCWD(cmd: String) {
+  implicit class StrCWD(val cmd: String) extends AnyVal {
     def @@(path: File) = Process(cmd, path, "" -> "")
   }
 
@@ -115,9 +117,14 @@ trait InstallMethods {
   def runCommand[T : CmdLike](cmd: T)(
       failureMsg: String = cmd.toString
     , successMsg: String = cmd.toString
-    ): InstallResults = {
+  ): Results = {
     if(cmd.! == 0) success(successMsg)
     else failure(failureMsg)
   }
+
+
+  /* ### Implicit conversion from ProcessBuilder-like things to Results */
+  implicit def cmdToResult[T : CmdLike](cmd: T): Results = runCommand(cmd)()
+  implicit def resultsToList[T : IsResult](r: T): List[Result] = r.trace
 
 }

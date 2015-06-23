@@ -1,13 +1,18 @@
 Nice.scalaProject
 
-name := "statika"
-
-organization := "ohnosequences"
+name          := "statika"
+organization  := "ohnosequences"
+description   := "Managing dependencies"
 
 bucketSuffix := "era7.com"
+scalaVersion := "2.11.6"
+crossScalaVersions := Seq("2.10.5", scalaVersion.value)
 
 libraryDependencies ++= Seq (
-    "com.chuusai" % "shapeless_2.10.2" % "2.0.0-M1"
-  , "ohnosequences" %% "type-sets" % "0.3.1"
-  , "org.scalatest" %% "scalatest" % "2.0" % "test"
-  )
+  "org.scalatest" %% "scalatest" % "2.2.5" % Test
+)
+
+testOptions       in Test += Tests.Argument("-oD")
+parallelExecution in Test := false
+
+incOptions := incOptions.value.withNameHashing(false)

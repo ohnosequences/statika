@@ -1,0 +1,4 @@
+This is the second milestone for the 2.0 release. There are few changes, mostly some adjustments after testing `2.0.0-M1`.
+
+* Fixed resolvers in the sbt plugins
+* Added name to compatible and made installWithDeps its method

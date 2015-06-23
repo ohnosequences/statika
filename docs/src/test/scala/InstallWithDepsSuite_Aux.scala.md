@@ -1,3 +1,5 @@
+
+```scala
 package ohnosequences.statika.tests
 
 import ohnosequences.statika._, bundles._, instructions._
@@ -61,3 +63,14 @@ object FooBundles {
   implicit object BuuzzEnv  extends Compatible(Env, Buuzz, TestMetadata)
   implicit object BuuzzzEnv extends Compatible(Env, Buuzzz, TestMetadata)
 }
+
+```
+
+
+
+
+[main/scala/ohnosequences/statika/Bundles.scala]: ../../main/scala/ohnosequences/statika/Bundles.scala.md
+[main/scala/ohnosequences/statika/Instructions.scala]: ../../main/scala/ohnosequences/statika/Instructions.scala.md
+[test/scala/BundleTest.scala]: BundleTest.scala.md
+[test/scala/InstallWithDepsSuite.scala]: InstallWithDepsSuite.scala.md
+[test/scala/InstallWithDepsSuite_Aux.scala]: InstallWithDepsSuite_Aux.scala.md
