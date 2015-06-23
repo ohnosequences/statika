@@ -46,7 +46,7 @@ Every bundle has a list of other bundles on which this one is directly dependent
 That is used for building a list of all transitive dependencies
 
 ```scala
-    lazy val bundleFullDependencies: List[AnyBundle] = 
+    lazy val bundleFullDependencies: List[AnyBundle] =
       ( ( bundleDependencies flatMap { _.bundleFullDependencies } ) ++ bundleDependencies ).distinct
 ```
 
@@ -93,22 +93,22 @@ An environment is a bundle that is supposed to set up some context for other bun
 
   abstract class Environment(d: AnyBundle*) extends AnyEnvironment { val bundleDependencies = d.toList }
 
-  implicit final def bundleOps[B <: AnyBundle](b: B):
-        BundleOps[B] =
-    new BundleOps[B](b)
-
-  case class BundleOps[B <: AnyBundle](b: B) extends AnyVal {
-
-    def installWithEnv[E <: AnyEnvironment]
-      (env: E, strategy: InstallStrategy): Results = {
-
-      (env.bundleFullDependencies ++ b.bundleFullDependencies)
-        .foldLeft( success(s"Installing bundle ${b.bundleName} with environment ${env.bundleName}") ){
-          (res, x) => strategy(res, x.install)
-        } -&-
-      b.install
-    }
-  }
+  // implicit final def bundleOps[B <: AnyBundle](b: B):
+  //       BundleOps[B] =
+  //   new BundleOps[B](b)
+  //
+  // case class BundleOps[B <: AnyBundle](b: B) extends AnyVal {
+  //
+  //   def installWithEnv[C <: AnyCompatible]
+  //     (comp: C, strategy: InstallStrategy): Results = {
+  //
+  //     (comp.environment.bundleFullDependencies ++ b.bundleFullDependencies)
+  //       .foldLeft( success(s"Installing bundle ${b.bundleName} with environment ${comp.environment.bundleName}") ){
+  //         (res, x) => strategy(res, x.install)
+  //       } -&-
+  //     b.install
+  //   }
+  // }
 
   trait AnyArtifactMetadata {
     val organization: String
@@ -119,6 +119,9 @@ An environment is a bundle that is supposed to set up some context for other bun
 
   trait AnyCompatible {
 
+    final lazy val fullName: String = this.getClass.getName.split("\\$").mkString(".")
+    final lazy val name: String = fullName split('.') last
+
     type Environment <: AnyEnvironment
     val  environment: Environment
 
@@ -126,13 +129,21 @@ An environment is a bundle that is supposed to set up some context for other bun
     val  bundle: Bundle
 
     val metadata: AnyArtifactMetadata
+
+    def install(strategy: InstallStrategy): Results = {
+
+      (environment.bundleFullDependencies ++ bundle.bundleFullDependencies)
+        .foldLeft( success(s"Installing bundle ${bundle.bundleName} with environment ${environment.bundleName}") ){
+          (res, x) => strategy(res, x.install)
+        } -&-
+      bundle.install
+    }
   }
 
-  class Compatible[
+  abstract class Compatible[
     E <: AnyEnvironment,
     B <: AnyBundle
-  ](
-    val environment: E,
+  ](val environment: E,
     val bundle: B,
     val metadata: AnyArtifactMetadata
   ) extends AnyCompatible {
@@ -146,25 +157,10 @@ An environment is a bundle that is supposed to set up some context for other bun
 ```
 
 
-------
 
-### Index
 
-+ src
-  + test
-    + scala
-      + [InstallWithDepsSuite_Aux.scala][test/scala/InstallWithDepsSuite_Aux.scala]
-      + [InstallWithDepsSuite.scala][test/scala/InstallWithDepsSuite.scala]
-      + [BundleTest.scala][test/scala/BundleTest.scala]
-  + main
-    + scala
-      + ohnosequences
-        + statika
-          + [Bundles.scala][main/scala/ohnosequences/statika/Bundles.scala]
-          + [Instructions.scala][main/scala/ohnosequences/statika/Instructions.scala]
-
-[test/scala/InstallWithDepsSuite_Aux.scala]: ../../../../test/scala/InstallWithDepsSuite_Aux.scala.md
-[test/scala/InstallWithDepsSuite.scala]: ../../../../test/scala/InstallWithDepsSuite.scala.md
-[test/scala/BundleTest.scala]: ../../../../test/scala/BundleTest.scala.md
 [main/scala/ohnosequences/statika/Bundles.scala]: Bundles.scala.md
 [main/scala/ohnosequences/statika/Instructions.scala]: Instructions.scala.md
+[test/scala/BundleTest.scala]: ../../../../test/scala/BundleTest.scala.md
+[test/scala/InstallWithDepsSuite.scala]: ../../../../test/scala/InstallWithDepsSuite.scala.md
+[test/scala/InstallWithDepsSuite_Aux.scala]: ../../../../test/scala/InstallWithDepsSuite_Aux.scala.md

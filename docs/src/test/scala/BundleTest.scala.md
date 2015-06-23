@@ -44,25 +44,10 @@ class BuhSuite extends org.scalatest.FunSuite {
 ```
 
 
-------
 
-### Index
 
-+ src
-  + test
-    + scala
-      + [InstallWithDepsSuite_Aux.scala][test/scala/InstallWithDepsSuite_Aux.scala]
-      + [InstallWithDepsSuite.scala][test/scala/InstallWithDepsSuite.scala]
-      + [BundleTest.scala][test/scala/BundleTest.scala]
-  + main
-    + scala
-      + ohnosequences
-        + statika
-          + [Bundles.scala][main/scala/ohnosequences/statika/Bundles.scala]
-          + [Instructions.scala][main/scala/ohnosequences/statika/Instructions.scala]
-
-[test/scala/InstallWithDepsSuite_Aux.scala]: InstallWithDepsSuite_Aux.scala.md
-[test/scala/InstallWithDepsSuite.scala]: InstallWithDepsSuite.scala.md
-[test/scala/BundleTest.scala]: BundleTest.scala.md
 [main/scala/ohnosequences/statika/Bundles.scala]: ../../main/scala/ohnosequences/statika/Bundles.scala.md
 [main/scala/ohnosequences/statika/Instructions.scala]: ../../main/scala/ohnosequences/statika/Instructions.scala.md
+[test/scala/BundleTest.scala]: BundleTest.scala.md
+[test/scala/InstallWithDepsSuite.scala]: InstallWithDepsSuite.scala.md
+[test/scala/InstallWithDepsSuite_Aux.scala]: InstallWithDepsSuite_Aux.scala.md
