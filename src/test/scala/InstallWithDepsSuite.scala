@@ -8,15 +8,15 @@ class InstallWithDepsSuite extends org.scalatest.FunSuite {
 
   test("Installing Bundles") {
 
-    assert(Bar.installWithEnv(Env, failFast).isSuccessful)
-    assert(Foo.installWithEnv(Env, failFast).isSuccessful)
-    assert(Quux.installWithEnv(Env, failFast).isSuccessful)
-    assert(Buzzz.installWithEnv(Env, failFast).isSuccessful)
+    assert(BarEnv.install(failFast).isSuccessful)
+    assert(FooEnv.install(failFast).isSuccessful)
+    assert(QuuxEnv.install(failFast).isSuccessful)
+    assert(BuzzzEnv.install(failFast).isSuccessful)
 
-    assert(Qux.installWithEnv(Env, failFast).hasFailures)
-    assert(Buzz.installWithEnv(Env, failFast).hasFailures)
-    assert(Buuzz.installWithEnv(Env, failFast).hasFailures)
-    assert(Buuzzz.installWithEnv(Env, failFast).hasFailures)
+    assert(QuxEnv.install(failFast).hasFailures)
+    assert(BuzzEnv.install(failFast).hasFailures)
+    assert(BuuzzEnv.install(failFast).hasFailures)
+    assert(BuuzzzEnv.install(failFast).hasFailures)
 
   }
 
