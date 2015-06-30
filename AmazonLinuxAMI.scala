@@ -77,10 +77,12 @@ object amazonLinuxAMIs extends Module(amis, api) {
       |mkdir -p ${workingDir}
       |cd ${workingDir}
       |
-      |echo "object apply extends App { " > apply.scala
-      |echo "  val results = ${comp.fullName}.install(ohnosequences.statika.instructions.failFast); " >> apply.scala
-      |echo "  results foreach println; " >> apply.scala
-      |echo "  if (results.hasFailures) sys.error(results.toString) " >> apply.scala
+      |echo "object apply { " > apply.scala
+      |echo "  def main(args: Array[String]): Unit = {" >> apply.scala
+      |echo "    val results = ${comp.fullName}.install(ohnosequences.statika.instructions.failFast); " >> apply.scala
+      |echo "    results foreach println; " >> apply.scala
+      |echo "    if (results.hasFailures) sys.error(results.toString) " >> apply.scala
+      |echo "  }" >> apply.scala
       |echo "}" >> apply.scala
       |cat apply.scala
       |
