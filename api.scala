@@ -11,17 +11,23 @@ object api extends Module {
   lazy val metadataLocalAMIIdURL = new URL(metadataLocalURL, "ami-id")
 
   sealed trait Architecture
-  case object x32 extends Architecture { override def toString = "32" }
-  case object x64 extends Architecture { override def toString = "64" }
+  object Architecture {
+    case object x32 extends Architecture { override def toString = "32" }
+    case object x64 extends Architecture { override def toString = "64" }
+  }
 
   sealed trait InstanceStatus
-  case object preparing extends InstanceStatus
-  case object building  extends InstanceStatus
-  case object applying  extends InstanceStatus
-  case object success   extends InstanceStatus
-  case object failure   extends InstanceStatus
+  object InstanceStatus {
+    case object preparing extends InstanceStatus
+    case object building  extends InstanceStatus
+    case object applying  extends InstanceStatus
+    case object success   extends InstanceStatus
+    case object failure   extends InstanceStatus
+  }
 
   sealed trait Virtualization
-  case object PV extends Virtualization
-  case object HVM extends Virtualization
+  object Virtualization {
+    case object PV extends Virtualization
+    case object HVM extends Virtualization
+  }
 }

@@ -110,13 +110,13 @@ object amazonLinuxAMIs extends Module(amis, api) {
       fixLineEndings(
         "#!/bin/sh \n" +
         initSetting +
-        tagStep(api.preparing) +
+        tagStep(InstanceStatus.preparing) +
         preparing +
-        tagStep(api.building) +
+        tagStep(InstanceStatus.building) +
         building(comp) +
-        tagStep(api.applying) +
+        tagStep(InstanceStatus.applying) +
         applying +
-        tagStep(api.success)
+        tagStep(InstanceStatus.success)
       )
 
     final def instanceSpecs[C <: AnyCompatible](comp: C)(
@@ -156,7 +156,10 @@ object amazonLinuxAMIs extends Module(amis, api) {
   // ephemeral storage and 64bit
   // See http://aws.amazon.com/amazon-linux-ami/
   object amiMap {
+
     import Region._
+    import Virtualization._
+
     def id(region: Region, virt: Virtualization): String = region match {
       case NorthernVirginia   => virt match {
         case HVM => "ami-28cae740"
@@ -212,7 +215,7 @@ object amazonLinuxAMIs extends Module(amis, api) {
       amiVersion = "2015.03"
   ) {
 
-    lazy val arch = x64
+    lazy val arch = Architecture.x64
     lazy val workingDir = "/media/ephemeral0/applicator"
   }
 
