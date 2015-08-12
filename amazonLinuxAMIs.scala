@@ -163,43 +163,43 @@ object amazonLinuxAMIs extends Module(amis, api) {
     def id(region: Region, virt: Virtualization): String = region match {
       case NorthernVirginia   => virt match {
         case HVM => "ami-28cae740"
-        case PV  => "ami-75b2d356"
+        case PV  => "ami-5ccae734"
       }
       case Oregon             => virt match {
         case HVM => "ami-9f527eaf"
-        case PV  => "ami-75b2d356"
+        case PV  => "ami-97527ea7"
       }
       case NorthernCalifornia => virt match {
         case HVM => "ami-3b14f27f"
-        case PV  => "ami-75b2d356"
+        case PV  => "ami-3714f273"
       }
       case Ireland            => virt match {
         case HVM => "ami-c90897be"
-        case PV  => "ami-75b2d356"
+        case PV  => "ami-cf0897b8"
       }
       // case Frankfurt          => virt match {
       //   case HVM => "ami-b0221fad"
-      //   case PV  => "ami-75b2d356"
+      //   case PV  => "ami-b6221fab"
       // }
       case Singapore          => virt match {
         case HVM => "ami-32d8e960"
-        case PV  => "ami-75b2d356"
+        case PV  => "ami-1cd8e94e"
       }
       case Tokyo              => virt match {
         case HVM => "ami-ddfa0ddd"
-        case PV  => "ami-75b2d356"
+        case PV  => "ami-d5fa0dd5"
       }
       case Sydney             => virt match {
         case HVM => "ami-fb9cecc1"
-        case PV  => "ami-75b2d356"
+        case PV  => "ami-819cecbb"
       }
       case SaoPaulo           => virt match {
         case HVM => "ami-bd2890a0"
-        case PV  => "ami-75b2d356"
+        case PV  => "ami-bf2890a2"
       }
       // case Beijin             => virt match {
       //   case HVM => "ami-f639abcf"
-      //   case PV  => "ami-75b2d356"
+      //   case PV  => "ami-f439abcd"
       // }
       case GovCloud           => virt match {
         case HVM => "ami-7db2d35e"
