@@ -21,10 +21,10 @@ object bundles {
   trait AnyBundle {
 
     /* Every bundle has a fully qualified name for distinction */
-    final lazy val bundleFullName: String = this.getClass.getName.split("\\$").mkString(".")
+    lazy val bundleFullName: String = this.getClass.getName.split("\\$").mkString(".")
 
     /* And a short version for convenience */
-    final lazy val bundleName: String = bundleFullName split('.') last
+    lazy val bundleName: String = bundleFullName split('.') last
 
     /* Every bundle has a list of other bundles on which this one is directly dependent */
     val  bundleDependencies: List[AnyBundle]
@@ -66,22 +66,6 @@ object bundles {
 
   abstract class Environment(d: AnyBundle*) extends AnyEnvironment { val bundleDependencies = d.toList }
 
-  // implicit final def bundleOps[B <: AnyBundle](b: B):
-  //       BundleOps[B] =
-  //   new BundleOps[B](b)
-  //
-  // case class BundleOps[B <: AnyBundle](b: B) extends AnyVal {
-  //
-  //   def installWithEnv[C <: AnyCompatible]
-  //     (comp: C, strategy: InstallStrategy): Results = {
-  //
-  //     (comp.environment.bundleFullDependencies ++ b.bundleFullDependencies)
-  //       .foldLeft( success(s"Installing bundle ${b.bundleName} with environment ${comp.environment.bundleName}") ){
-  //         (res, x) => strategy(res, x.install)
-  //       } -&-
-  //     b.install
-  //   }
-  // }
 
   trait AnyArtifactMetadata {
     val organization: String
@@ -90,10 +74,12 @@ object bundles {
     val artifactUrl: String
   }
 
+
   trait AnyCompatible {
 
-    final lazy val fullName: String = this.getClass.getName.split("\\$").mkString(".")
-    final lazy val name: String = fullName split('.') last
+    val prefixName: String
+    val name: String
+    lazy val fullName: String = s"${prefixName}.${name}"
 
     type Environment <: AnyEnvironment
     val  environment: Environment
@@ -113,6 +99,23 @@ object bundles {
     }
   }
 
+  abstract class CompatibleWithPrefix[
+    E <: AnyEnvironment,
+    B <: AnyBundle
+  ](val prefixName: String
+  )(val environment: E,
+    val bundle: B,
+    val metadata: AnyArtifactMetadata
+  ) extends AnyCompatible {
+    type Me = this.type;
+    lazy val me: Me = this: Me
+
+    type Environment = E
+    type Bundle = B
+
+    lazy val name: String = this.toString
+  }
+
   abstract class Compatible[
     E <: AnyEnvironment,
     B <: AnyBundle
@@ -120,9 +123,14 @@ object bundles {
     val bundle: B,
     val metadata: AnyArtifactMetadata
   ) extends AnyCompatible {
+    type Me = this.type;
+    lazy val me: Me = this: Me
 
     type Environment = E
     type Bundle = B
+
+    lazy val prefixName: String = this.getClass.getName.split("\\$").init.mkString(".")
+    lazy val name: String = this.toString
   }
 
 }
