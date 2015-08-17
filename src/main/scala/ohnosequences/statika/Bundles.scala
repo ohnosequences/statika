@@ -14,32 +14,35 @@ package ohnosequences.statika
    for the bundles which are dependent on it. For these purposes, there is an `install` method.
 */
 
-object bundles {
+case object bundles {
 
   import instructions._
+  import java.nio.file._
 
   trait AnyBundle {
 
     /* Every bundle has a fully qualified name for distinction */
+    // NOTE: if you define a bundle inside of an abstract class, this prefix will be wrong
     lazy val bundleFullName: String = this.getClass.getName.split("\\$").mkString(".")
 
     /* And a short version for convenience */
-    lazy val bundleName: String = bundleFullName split('.') last
+    lazy val bundleName: String = bundleFullName.split('.').last
 
     /* Every bundle has a list of other bundles on which this one is directly dependent */
     val  bundleDependencies: List[AnyBundle]
 
     /* That is used for building a list of all transitive dependencies */
-    lazy val bundleFullDependencies: List[AnyBundle] =
+    lazy final val bundleFullDependencies: List[AnyBundle] =
       ( ( bundleDependencies flatMap { _.bundleFullDependencies } ) ++ bundleDependencies ).distinct
 
-    /* `install` method is what bundle is supposed to do:
-       - if it's a _tool_, install it;
-       - if it's a _resource_, prepare/create it (and other methods can provide
-         a type-safe interface for interaction with it);
-       - if it's a _library_, nothing;
-    */
-    def install: Results
+
+    /* Instructions determine the purpuse of the bundle in a declarative form */
+    def instructions: AnyInstructions
+
+    // NOTE: this is here to facilate transition to the new API for old bundles
+    def install: AnyResult = instructions.run(
+      Files.createTempDirectory(Paths.get("."), bundleName).toFile
+    )
   }
 
   /* ### Auxiliary stuff
@@ -54,7 +57,7 @@ object bundles {
   /* A module is just a bundle with an empty install method */
   trait AnyModule extends AnyBundle {
 
-    final def install: Results = success(s"Module ${bundleFullName} is installed")
+    final def instructions: AnyInstructions = say(s"Module ${bundleFullName} is installed")
   }
 
 
