@@ -66,23 +66,6 @@ object bundles {
 
   abstract class Environment(d: AnyBundle*) extends AnyEnvironment { val bundleDependencies = d.toList }
 
-  // implicit final def bundleOps[B <: AnyBundle](b: B):
-  //       BundleOps[B] =
-  //   new BundleOps[B](b)
-  //
-  // case class BundleOps[B <: AnyBundle](b: B) extends AnyVal {
-  //
-  //   def installWithEnv[C <: AnyCompatible]
-  //     (comp: C, strategy: InstallStrategy): Results = {
-  //
-  //     (comp.environment.bundleFullDependencies ++ b.bundleFullDependencies)
-  //       .foldLeft( success(s"Installing bundle ${b.bundleName} with environment ${comp.environment.bundleName}") ){
-  //         (res, x) => strategy(res, x.install)
-  //       } -&-
-  //     b.install
-  //   }
-  // }
-
   trait AnyArtifactMetadata {
     val organization: String
     val artifact: String

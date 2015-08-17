@@ -5,7 +5,7 @@ organization  := "ohnosequences"
 description   := "Managing dependencies"
 
 bucketSuffix := "era7.com"
-scalaVersion := "2.11.6"
+scalaVersion := "2.11.7"
 crossScalaVersions := Seq("2.10.5", scalaVersion.value)
 
 libraryDependencies ++= Seq (
@@ -16,3 +16,5 @@ testOptions       in Test += Tests.Argument("-oD")
 parallelExecution in Test := false
 
 incOptions := incOptions.value.withNameHashing(false)
+
+dependencyOverrides += "org.scala-lang.modules" %% "scala-xml" % "1.0.4"
