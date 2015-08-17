@@ -37,7 +37,8 @@ case object bundles {
 
 
     /* Instructions determine the purpuse of the bundle in a declarative form */
-    def instructions: AnyInstructions
+    // TODO: should we preserve the instructions type?
+    val instructions: AnyInstructions
 
     // NOTE: this is here to facilate transition to the new API for old bundles
     def install: AnyResult = instructions.run(
@@ -57,7 +58,7 @@ case object bundles {
   /* A module is just a bundle with an empty install method */
   trait AnyModule extends AnyBundle {
 
-    final def instructions: AnyInstructions = say(s"Module ${bundleFullName} is installed")
+    final val instructions: AnyInstructions = say(s"Module ${bundleFullName} is installed")
   }
 
 
@@ -92,13 +93,18 @@ case object bundles {
 
     val metadata: AnyArtifactMetadata
 
-    def install(strategy: InstallStrategy): Results = {
+    // TODO: combining strategy should be an option
+    def instructions: AnyInstructions = {
+      val allBundles: List[AnyBundle] =
+        environment.bundleFullDependencies ++
+        bundle.bundleFullDependencies :+
+        bundle
 
-      (environment.bundleFullDependencies ++ bundle.bundleFullDependencies)
-        .foldLeft( success(s"Installing bundle ${bundle.bundleName} with environment ${environment.bundleName}") ){
-          (res, x) => strategy(res, x.install)
-        } -&-
-      bundle.install
+      allBundles.foldLeft[AnyInstructions](
+        say(s"Installing bundle ${bundle.bundleName} with environment ${environment.bundleName}")
+      ){ (acc, x) =>
+        acc -&- x.instructions
+      }
     }
   }
 
