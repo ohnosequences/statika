@@ -126,40 +126,84 @@ case object instructions {
     }
   }
 
+  // type -&-[
+  //   F <: AnyInstructions,
+  //   S <: AnyInstructions { type In = F#Out; type Env = F#Env }
+  // ] = CombineNonFailable[F, S]
+
+
+  // /* Same as combine non-failable, but doesn't append the first trace ("forgets it") */
+  // case class CombineForgetful[
+  //   F <: AnyInstructions,
+  //   S <: AnyInstructions { type In = F#Out; type Env = F#Env }
+  // ](val first:  AnyInstructions.sameAs[F],
+  //   val second: AnyInstructions.sameAs[S]
+  // ) extends AnyCombinedInstructions {
+  //   type First = F
+  //   type Second = S
+  //
+  //   def run(env: Env, in: In): Result[Out] = {
+  //     first.run(env, in) match {
+  //       case Failure(tr)     => Failure(tr)
+  //       case Success(tr1, _) => second.run(workingDir)
+  //     }
+  //   }
+  // }
+  //
+  // type ->-[F <: AnyInstructions, S <: AnyInstructions] = CombineForgetful[F, S]
+
+  // case class CombineFailable[
+  //   // FIXME: sbt warns that this is bad refinement:
+  //   F <: AnyInstructions,
+  //   S <: AnyInstructions { type In = F#Out with F#In; type Env = F#Env }
+  // ](val first:  AnyInstructions.sameAs[F],
+  //   val second: AnyInstructions.sameAs[S]
+  // ) extends AnyCombinedInstructions {
+  //   type First = F
+  //   type Second = S
+  //
+  //   def run(env: Env, in: In): Result[Out] = {
+  //     first.run(env, in) match {
+  //       case Failure(tr)      => tr +: second.run(env, in)
+  //       case Success(tr, out) => tr +: second.run(env, out)
+  //     }
+  //
+  //   }
+  // }
+
+  // type -|-[
+  //   F <: AnyInstructions { type Out = F#In },
+  //   S <: AnyInstructions { type In = F#Out; type Env = F#Env }
+  // ] = CombineFailable[F, S]
 
 
   import sys.process.Process
   import util.Try
 
-  trait AnyFileInstructions extends AnyInstructions {
+  trait AnySimpleInstructions extends AnyInstructions {
 
     type Env = AnyFileSystemEnvironment
   }
 
-  abstract class FileInstructions[I, O] extends AnyFileInstructions {
+  abstract class SimpleInstructions[I, O] extends AnySimpleInstructions {
 
     type In = I
     type Out = O
   }
 
 
-  case class const[I, C](msg: String, c: C) extends FileInstructions[I, C] {
-
-    def run(env: Env, in: In): Result[Out] = Success[C](Seq(msg), c)
-  }
-
-  case class say[I](msg: String) extends FileInstructions[I, I] {
+  case class say[I](msg: String) extends SimpleInstructions[I, I] {
 
     def run(env: Env, in: In): Result[Out] = Success[I](Seq(msg), in)
   }
 
-  case class fail[I](msg: String) extends FileInstructions[I, I] {
+  case class fail[I](msg: String) extends SimpleInstructions[I, I] {
 
     def run(env: Env, in: In): Result[Out] = Failure[I](Seq(msg))
   }
 
 
-  case class TryInstructions[I, O](tf: I => Try[O]) extends FileInstructions[I, O] {
+  case class TryInstructions[I, O](tf: I => Try[O]) extends SimpleInstructions[I, O] {
 
     def run(env: Env, in: In): Result[Out] = {
       tf(in) match {
@@ -172,7 +216,7 @@ case object instructions {
   implicit def tryToInstructions[I, O](t: Try[O]): TryInstructions[I, O] = TryInstructions[I, O](_ => t)
 
 
-  case class CmdInstructions[I](sf: I => Seq[String]) extends FileInstructions[I, String] {
+  case class CmdInstructions[I](sf: I => Seq[String]) extends SimpleInstructions[I, String] {
 
     def run(env: Env, in: In): Result[Out] = {
       val seq = sf(in)

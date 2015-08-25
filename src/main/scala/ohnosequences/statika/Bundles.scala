@@ -19,9 +19,6 @@ case object bundles {
   import instructions._
   import java.nio.file._
 
-  /* The only thing you have in the beginning of running instrucitons is your environment */
-  type AnyBundleInstructions = AnyFileInstructions { type In = Env }
-
   trait AnyBundle {
 
     /* Every bundle has a fully qualified name for distinction */
@@ -41,12 +38,12 @@ case object bundles {
 
     /* Instructions determine the purpuse of the bundle in a declarative form */
     // TODO: should we preserve the instructions type?
-    val instructions: AnyBundleInstructions
+    val instructions: AnyInstructions
 
     // NOTE: this is here to facilate transition to the new API for old bundles
-    lazy val env = FileSystemEnvironment(Files.createTempDirectory(Paths.get("."), bundleName).toFile)
-
-    def install: AnyResult = instructions.run(env, env)
+    def install: AnyResult = instructions.run(
+      Files.createTempDirectory(Paths.get("."), bundleName).toFile
+    )
   }
 
   /* ### Auxiliary stuff
@@ -61,7 +58,7 @@ case object bundles {
   /* A module is just a bundle with an empty install method */
   trait AnyModule extends AnyBundle {
 
-    final val instructions: AnyBundleInstructions = say(s"Module ${bundleFullName} is installed")
+    final val instructions: AnyInstructions = say(s"Module ${bundleFullName} is installed")
   }
 
 
@@ -96,10 +93,8 @@ case object bundles {
 
     val metadata: AnyArtifactMetadata
 
-    lazy val env = FileSystemEnvironment(Files.createTempDirectory(Paths.get("."), fullName).toFile)
-
     // TODO: combining strategy should be an option
-    def instructions: AnyBundleInstructions = {
+    def instructions: AnyInstructions = {
       val allBundles: List[AnyBundle] =
         environment.bundleFullDependencies ++
         bundle.bundleFullDependencies :+
