@@ -80,9 +80,9 @@ object amazonLinuxAMIs extends Module(amis, api) {
       |
       |echo "object apply { " > apply.scala
       |echo "  def main(args: Array[String]): Unit = {" >> apply.scala
-      |echo "    val results = ${comp.fullName}.install; " >> apply.scala
-      |echo "    results foreach println; " >> apply.scala
-      |echo "    if (results.hasFailures) sys.error(results.toString) " >> apply.scala
+      |echo "    val result = ${comp.fullName}.install; " >> apply.scala
+      |echo "    result.trace.foreach(println); " >> apply.scala
+      |echo "    if (result.hasFailures) sys.error(result.trace.toString) " >> apply.scala
       |echo "  }" >> apply.scala
       |echo "}" >> apply.scala
       |cat apply.scala
