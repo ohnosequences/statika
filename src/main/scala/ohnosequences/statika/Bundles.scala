@@ -18,6 +18,7 @@ case object bundles {
 
   import instructions._, results._
   import java.nio.file._
+  import java.io.File
 
   trait AnyBundle {
 
@@ -38,12 +39,11 @@ case object bundles {
 
     /* Instructions determine the purpuse of the bundle in a declarative form */
     // TODO: should we preserve the instructions type?
-    val instructions: AnyInstructions
+    def instructions: AnyInstructions
 
-    // NOTE: this is here to facilate transition to the new API for old bundles
-    def install: AnyResult = instructions.run(
-      Files.createTempDirectory(Paths.get("."), bundleName).toFile
-    )
+    // def install: AnyResult = instructions.run(
+    //   Files.createTempDirectory(Paths.get("."), bundleName).toFile
+    // )
   }
 
   /* ### Auxiliary stuff
@@ -58,7 +58,7 @@ case object bundles {
   /* A module is just a bundle with an empty install method */
   trait AnyModule extends AnyBundle {
 
-    final val instructions: AnyInstructions = success(s"Module ${bundleFullName} is installed", ())
+    final def instructions: AnyInstructions = success(s"Module ${bundleFullName} is installed", ())
   }
 
 
@@ -94,22 +94,26 @@ case object bundles {
     val metadata: AnyArtifactMetadata
 
     // TODO: combining strategy should be an option
-    def instructions: AnyInstructions = {
+    def install: AnyResult = {
+      val workingDir = new File(".")
+
       val allBundles: List[AnyBundle] =
         environment.bundleFullDependencies ++
         bundle.bundleFullDependencies :+
         bundle
 
-      allBundles.foldLeft[AnyInstructions](
-        success(s"Installing bundle ${bundle.bundleName} with environment ${environment.bundleName}", ())
+      println(allBundles.toString)
+
+      allBundles.foldLeft[AnyResult](
+        Success(s"Installing bundle ${bundle.bundleName} with environment ${environment.bundleName}", ())
       ){ (acc, x) =>
-        acc -&- x.instructions
+        acc match {
+          case Failure(tr) => Failure(tr)
+          case Success(tr, _) => x.instructions.run(workingDir)
+        }
       }
     }
 
-    def install: AnyResult = instructions.run(
-      Files.createTempDirectory(Paths.get("."), bundle.bundleFullName).toFile
-    )
 
   }
 

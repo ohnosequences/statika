@@ -21,8 +21,7 @@ case object results {
   }
 
 
-  // type Result[O] = AnyResult { type Out <: O }
-  abstract class Result[O] extends AnyResult {
+  sealed abstract class Result[O] extends AnyResult {
     type Out = O
   }
 
@@ -32,11 +31,22 @@ case object results {
 
     def prependTrace(msgs: Seq[String]): Failure[Out] = Failure[Out](msgs ++ trace)
   }
+
+  object Failure {
+
+    def apply[O](msg: String): Failure[O] = Failure(Seq(msg))
+  }
+
   case class Success[O](val trace: Seq[String], o: O) extends Result[O] {
     val  out: Option[Out] = Some(o)
     val hasFailures = false
 
     def prependTrace(msgs: Seq[String]): Success[Out] = Success[Out](msgs ++ trace, o)
+  }
+
+  object Success {
+
+    def apply[O](msg: String, o: O): Success[O] = Success[O](Seq(msg), o)
   }
 
 
@@ -159,6 +169,9 @@ case object instructions {
     def run(workingDir: File): Result[Out] = r(workingDir)
   }
 
+  case class TryHard[O](r: File => Result[O]) extends SimpleInstructions[O](r)
+
+  // case class JustDoIt[O](x: => Result[O]) extends SimpleInstructions[O](_ => x)
 
   case class say(msg: String) extends SimpleInstructions[Unit](
     _ => Success(Seq(msg), ())
