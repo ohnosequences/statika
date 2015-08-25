@@ -7,12 +7,11 @@ This module defines convenient types for presenting installation results and met
 them.
 */
 
-case object instructions {
-
-  import java.io.File
+case object results {
 
   sealed trait AnyResult {
     type Out
+    val  out: Option[Out]
 
     val trace: Seq[String]
     val hasFailures: Boolean
@@ -22,21 +21,23 @@ case object instructions {
   }
 
 
-  case class Failure[O](val trace: Seq[String]) extends AnyResult {
+  // type Result[O] = AnyResult { type Out <: O }
+  abstract class Result[O] extends AnyResult {
     type Out = O
+  }
+
+  case class Failure[O](val trace: Seq[String]) extends Result[O] {
+    val out: Option[Out] = None
     val hasFailures = true
 
-    def prependTrace(msgs: Seq[String]): Failure[Out] = Failure[O](msgs ++ trace)
+    def prependTrace(msgs: Seq[String]): Failure[Out] = Failure[Out](msgs ++ trace)
   }
-  case class Success[O](val trace: Seq[String], o: O) extends AnyResult {
-    type Out = O
-    val  out: Out = o
+  case class Success[O](val trace: Seq[String], o: O) extends Result[O] {
+    val  out: Option[Out] = Some(o)
     val hasFailures = false
 
-    def prependTrace(msgs: Seq[String]): Success[O] = Success[O](msgs ++ trace, o)
+    def prependTrace(msgs: Seq[String]): Success[Out] = Success[Out](msgs ++ trace, o)
   }
-
-  type Result[O] = AnyResult { type Out <: O }
 
 
   implicit def resultSyntax[O](r: Result[O]): ResultSyntax[O] = ResultSyntax[O](r)
@@ -44,21 +45,31 @@ case object instructions {
     def +:(msgs: Seq[String]): Result[O] = r.prependTrace(msgs)
   }
 
+}
+
+
+case object instructions {
+
+  import java.io.File
+  import results._
 
 
   trait AnyInstructions {
     type Out
-    type R = Result[Out]
 
-    def run(workingDir: File): R
+    def run(workingDir: File): Result[Out]
+  }
+
+  object AnyInstructions {
+    type sameAs[I <: AnyInstructions] = I with AnyInstructions { type Out = I#Out }
   }
 
   trait AnyCombinedInstructions extends AnyInstructions {
     type First <: AnyInstructions
-    val  first: First
+    val  first: AnyInstructions.sameAs[First]
 
     type Second <: AnyInstructions
-    val  second: Second
+    val  second: AnyInstructions.sameAs[Second]
 
     type Out = Second#Out
   }
@@ -68,8 +79,8 @@ case object instructions {
   case class CombineNonFailable[
     F <: AnyInstructions,
     S <: AnyInstructions
-  ](val first: F,
-    val second: S
+  ](val first: AnyInstructions.sameAs[F],
+    val second: AnyInstructions.sameAs[S]
   ) extends AnyCombinedInstructions {
     type First = F
     type Second = S
@@ -89,8 +100,8 @@ case object instructions {
   case class CombineForgetful[
     F <: AnyInstructions,
     S <: AnyInstructions
-  ](val first: F,
-    val second: S
+  ](val first: AnyInstructions.sameAs[F],
+    val second: AnyInstructions.sameAs[S]
   ) extends AnyCombinedInstructions {
     type First = F
     type Second = S
@@ -109,8 +120,8 @@ case object instructions {
   case class CombineFailable[
     F <: AnyInstructions,
     S <: AnyInstructions
-  ](val first: F,
-    val second: S
+  ](val first: AnyInstructions.sameAs[F],
+    val second: AnyInstructions.sameAs[S]
   ) extends AnyCombinedInstructions {
     type First = F
     type Second = S
@@ -123,16 +134,18 @@ case object instructions {
   type -|-[F <: AnyInstructions, S <: AnyInstructions] = CombineFailable[F, S]
 
 
-  implicit def instructionsSyntax[X, I <: AnyInstructions](x: X)(implicit toInst: X => I):
+  implicit def instructionsSyntax[X, I <: AnyInstructions](x: X)(implicit toInst: X => AnyInstructions.sameAs[I]):
     InstructionsSyntax[I] =
     InstructionsSyntax[I](toInst(x))
 
-  case class InstructionsSyntax[I <: AnyInstructions](i: I) {
+  case class InstructionsSyntax[I <: AnyInstructions](i: AnyInstructions.sameAs[I]) {
 
-    def -&-[U <: AnyInstructions](u: U): I -&- U = CombineNonFailable[I, U](i, u)
-    def ->-[U <: AnyInstructions](u: U): I ->- U = CombineForgetful[I, U](i, u)
-    def -|-[U <: AnyInstructions](u: U): I -|- U = CombineFailable[I, U](i, u)
+    def -&-[U <: AnyInstructions](u: AnyInstructions.sameAs[U]): I -&- U = CombineNonFailable[I, U](i, u)
+    def ->-[U <: AnyInstructions](u: AnyInstructions.sameAs[U]): I ->- U = CombineForgetful[I, U](i, u)
+    def -|-[U <: AnyInstructions](u: AnyInstructions.sameAs[U]): I -|- U = CombineFailable[I, U](i, u)
   }
+
+  implicit def stupidScala[I <: AnyInstructions](i: I): AnyInstructions.sameAs[I] = i
 
 
   import sys.process.Process
@@ -148,11 +161,15 @@ case object instructions {
 
 
   case class say(msg: String) extends SimpleInstructions[Unit](
-    _ => Success[Unit](Seq(msg), ())
+    _ => Success(Seq(msg), ())
   )
 
-  case class fail(msg: String) extends SimpleInstructions[Unit](
-    _ => Failure[Unit](Seq(msg))
+  case class success[O](msg: String, o: O) extends SimpleInstructions[O](
+    _ => Success[O](Seq(msg), o)
+  )
+
+  case class failure[O](msg: String) extends SimpleInstructions[O](
+    _ => Failure[O](Seq(msg))
   )
 
 

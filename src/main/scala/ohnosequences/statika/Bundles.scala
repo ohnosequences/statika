@@ -16,7 +16,7 @@ package ohnosequences.statika
 
 case object bundles {
 
-  import instructions._
+  import instructions._, results._
   import java.nio.file._
 
   trait AnyBundle {
@@ -58,7 +58,7 @@ case object bundles {
   /* A module is just a bundle with an empty install method */
   trait AnyModule extends AnyBundle {
 
-    final val instructions: AnyInstructions = say(s"Module ${bundleFullName} is installed")
+    final val instructions: AnyInstructions = success(s"Module ${bundleFullName} is installed", ())
   }
 
 
@@ -101,11 +101,16 @@ case object bundles {
         bundle
 
       allBundles.foldLeft[AnyInstructions](
-        say(s"Installing bundle ${bundle.bundleName} with environment ${environment.bundleName}")
+        success(s"Installing bundle ${bundle.bundleName} with environment ${environment.bundleName}", ())
       ){ (acc, x) =>
         acc -&- x.instructions
       }
     }
+
+    def install: AnyResult = instructions.run(
+      Files.createTempDirectory(Paths.get("."), bundle.bundleFullName).toFile
+    )
+
   }
 
   abstract class CompatibleWithPrefix[
