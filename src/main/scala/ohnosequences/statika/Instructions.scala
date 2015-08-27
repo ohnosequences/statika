@@ -106,6 +106,8 @@ case object instructions {
         case Success(tr1, x) => tr1 +: second.run(workingDir)
       }
     }
+
+    override def toString = s"(${first.toString} -&- ${second.toString})"
   }
 
 
@@ -122,6 +124,8 @@ case object instructions {
     final def run(workingDir: File): Result[Out] = {
       first.run(workingDir).trace +: second.run(workingDir)
     }
+
+    override def toString = s"(${first.toString} ->- ${second.toString})"
   }
 
 
@@ -141,6 +145,8 @@ case object instructions {
         case s@Success(tr, x) => s
       }
     }
+
+    override def toString = s"(${first.toString} -|- ${second.toString})"
   }
 
 
