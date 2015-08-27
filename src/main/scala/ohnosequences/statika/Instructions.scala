@@ -77,7 +77,7 @@ case object instructions {
     type withOut[O] = AnyInstructions { type Out = O }
   }
 
-  // trait Instructions[O] extends AnyInstructions { type Out = O }
+  trait Instructions[O] extends AnyInstructions { type Out = O }
 
   trait AnyCombinedInstructions extends AnyInstructions {
     type First <: AnyInstructions
@@ -86,17 +86,17 @@ case object instructions {
     type Second <: AnyInstructions
     val  second: AnyInstructions.sameAs[Second]
 
-    type Out = Second#Out
+    // type Out = Second#Out
   }
 
 
-  /* Same as combine non-failable, but doesn't append the first trace ("forgets it") */
-  case class CombineNonFailable[
+  /* This executes second step only if the first one succeeded */
+  case class -&-[
     F <: AnyInstructions,
     S <: AnyInstructions
   ](val first: AnyInstructions.sameAs[F],
     val second: AnyInstructions.sameAs[S]
-  ) extends AnyCombinedInstructions {
+  ) extends AnyCombinedInstructions with Instructions[S#Out] {
     type First = F
     type Second = S
 
@@ -108,36 +108,14 @@ case object instructions {
     }
   }
 
-  type -&-[F <: AnyInstructions, S <: AnyInstructions] = CombineNonFailable[F, S]
 
-
-  /* Same as combine non-failable, but doesn't append the first trace ("forgets it") */
-  case class CombineForgetful[
+  /* This executes both steps irrespectively of the result of the first one */
+  case class ->-[
     F <: AnyInstructions,
     S <: AnyInstructions
   ](val first: AnyInstructions.sameAs[F],
     val second: AnyInstructions.sameAs[S]
-  ) extends AnyCombinedInstructions {
-    type First = F
-    type Second = S
-
-    final def run(workingDir: File): Result[Out] = {
-      first.run(workingDir) match {
-        case Failure(tr)  => Failure(tr)
-        case Success(_, tr1) => second.run(workingDir)
-      }
-    }
-  }
-
-  type ->-[F <: AnyInstructions, S <: AnyInstructions] = CombineForgetful[F, S]
-
-
-  case class CombineFailable[
-    F <: AnyInstructions,
-    S <: AnyInstructions
-  ](val first: AnyInstructions.sameAs[F],
-    val second: AnyInstructions.sameAs[S]
-  ) extends AnyCombinedInstructions {
+  ) extends AnyCombinedInstructions with Instructions[S#Out] {
     type First = F
     type Second = S
 
@@ -146,7 +124,24 @@ case object instructions {
     }
   }
 
-  type -|-[F <: AnyInstructions, S <: AnyInstructions] = CombineFailable[F, S]
+
+  /* This executes second step only if the first one failed */
+  case class -|-[
+    F <: AnyInstructions,
+    S <: AnyInstructions { type Out = F#Out }
+  ](val first: AnyInstructions.sameAs[F],
+    val second: AnyInstructions.sameAs[S]
+  ) extends AnyCombinedInstructions with Instructions[S#Out] {
+    type First = F
+    type Second = S
+
+    final def run(workingDir: File): Result[Out] = {
+      first.run(workingDir) match {
+        case Failure(tr)  => tr +: second.run(workingDir)
+        case s@Success(tr, x) => s
+      }
+    }
+  }
 
 
   implicit def instructionsSyntax[X, I <: AnyInstructions](x: X)(implicit toInst: X => AnyInstructions.sameAs[I]):
@@ -155,9 +150,9 @@ case object instructions {
 
   case class InstructionsSyntax[I <: AnyInstructions](i: AnyInstructions.sameAs[I]) {
 
-    def -&-[U <: AnyInstructions](u: AnyInstructions.sameAs[U]): I -&- U = CombineNonFailable[I, U](i, u)
-    def ->-[U <: AnyInstructions](u: AnyInstructions.sameAs[U]): I ->- U = CombineForgetful[I, U](i, u)
-    def -|-[U <: AnyInstructions](u: AnyInstructions.sameAs[U]): I -|- U = CombineFailable[I, U](i, u)
+    def -&-[U <: AnyInstructions](u: AnyInstructions.sameAs[U]): I -&- U = instructions.-&-(i, u)
+    def ->-[U <: AnyInstructions](u: AnyInstructions.sameAs[U]): I ->- U = instructions.->-(i, u)
+    def -|-[U <: AnyInstructions { type Out = I#Out }](u: AnyInstructions.sameAs[U]): I -|- U = instructions.-|-(i, u)
   }
 
   implicit def stupidScala[I <: AnyInstructions](i: I): AnyInstructions.sameAs[I] = i
@@ -168,8 +163,8 @@ case object instructions {
 
   trait AnySimpleInstructions extends AnyInstructions
 
-  class SimpleInstructions[O](r: File => Result[O]) extends AnySimpleInstructions {
-    type Out = O
+  class SimpleInstructions[O](r: File => Result[O])
+  extends AnySimpleInstructions with Instructions[O] {
 
     def run(workingDir: File): Result[Out] = r(workingDir)
   }
