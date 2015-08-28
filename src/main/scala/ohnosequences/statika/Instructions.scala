@@ -167,15 +167,10 @@ case object instructions {
   import sys.process.Process
   import util.Try
 
-  trait AnySimpleInstructions extends AnyInstructions
-
-  class SimpleInstructions[O](r: File => Result[O])
-  extends AnySimpleInstructions with Instructions[O] {
+  class SimpleInstructions[O](r: File => Result[O]) extends Instructions[O] {
 
     def run(workingDir: File): Result[Out] = r(workingDir)
   }
-
-  case class TryHard[O](r: File => Result[O]) extends SimpleInstructions[O](r)
 
   // case class JustDoIt[O](x: => Result[O]) extends SimpleInstructions[O](_ => x)
 
@@ -192,14 +187,16 @@ case object instructions {
   )
 
 
-  case class TryInstructions[X](t: Try[X]) extends SimpleInstructions[X]({
-    _ => t match {
-      case util.Success(output) => Success[X](Seq(t.toString), output)
-      case util.Failure(e) => Failure[X](Seq(e.getMessage))
-    }
-  })
 
-  implicit def tryToInstructions[T](t: Try[T]): TryInstructions[T] = TryInstructions[T](t)
+  object LazyTry {
+    def apply[T](t: => T): Instructions[T] = new Instructions[T] {
+
+      def run(workingDir: File): Result[Out] = Try(t) match {
+        case util.Success(output) => Success[T](this.toString, output)
+        case util.Failure(e) => Failure[T](e.getMessage)
+      }
+    }
+  }
 
 
   case class CmdInstructions(seq: Seq[String]) extends SimpleInstructions[String]({

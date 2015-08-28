@@ -53,6 +53,8 @@ class InstructionsSuite extends org.scalatest.FunSuite {
   test("test two combinators") {
     assertSuccess{ yes -&- yes -|- { yes ->- no } }
     assertFailure{ yes -&- no  -|- { yes ->- no } }
+    // val a = Try{println(1/0)}
+    assertSuccess{ LazyTry{println(1)} -&- LazyTry{println(2)} -|- { LazyTry{println(3)} } }
   }
 
 }
