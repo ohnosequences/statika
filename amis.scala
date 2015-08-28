@@ -21,16 +21,12 @@ object amis extends Module(api) {
 
     // TODO why not put all the Java/Scala install here?
     /* This method checks that the machine on which it's called has the corresponding image. */
-    def instructions: AnyInstructions = TryHard[Unit]({ _ =>
-      try {
-        println("FOOOO")
-        val amiId = io.Source.fromURL(new URL(api.metadataLocalURL, "ami-id")).mkString
-        if (amiId == id) Success(s"Checked that the Amazon Machine Image id is ${id}", ())
-        else Failure(s"AMI should be ${id}. Found ${amiId}")
-      } catch {
-        case e: Throwable => Failure(s"Couldn't check AMI id because of ${e.getMessage}")
-      }
-    })
+    def instructions: AnyInstructions = LazyTry[Unit] {
+      println("FOOOO")
+      val amiId = io.Source.fromURL(new URL(api.metadataLocalURL, "ami-id")).mkString
+      if (amiId == id) Success(s"Checked that the Amazon Machine Image id is ${id}", ())
+      else Failure(s"AMI should be ${id}. Found ${amiId}")
+    }
 
   }
 
