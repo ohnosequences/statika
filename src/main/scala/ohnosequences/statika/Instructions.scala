@@ -101,7 +101,8 @@ case object instructions {
     type Second = S
 
     final def run(workingDir: File): Result[Out] = {
-      first.run(workingDir) match {
+      val f: AnyInstructions.sameAs[F] = stupidScala(first)
+      f.run(workingDir) match {
         case Failure(tr)  => Failure(tr)
         case Success(tr1, x) => {
           val s: AnyInstructions.sameAs[S] = stupidScala(second)
