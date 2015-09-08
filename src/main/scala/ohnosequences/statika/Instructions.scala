@@ -81,10 +81,10 @@ case object instructions {
 
   trait AnyCombinedInstructions extends AnyInstructions {
     type First <: AnyInstructions
-    val  first: AnyInstructions.sameAs[First]
+    val  first: First
 
     type Second <: AnyInstructions
-    val  second: AnyInstructions.sameAs[Second]
+    val  second: Second
 
     // type Out = Second#Out
   }
@@ -94,8 +94,8 @@ case object instructions {
   case class -&-[
     F <: AnyInstructions,
     S <: AnyInstructions
-  ](val first: AnyInstructions.sameAs[F],
-    val second: AnyInstructions.sameAs[S]
+  ](val first: F,
+    val second: S
   ) extends AnyCombinedInstructions with Instructions[S#Out] {
     type First = F
     type Second = S
@@ -103,7 +103,10 @@ case object instructions {
     final def run(workingDir: File): Result[Out] = {
       first.run(workingDir) match {
         case Failure(tr)  => Failure(tr)
-        case Success(tr1, x) => tr1 +: second.run(workingDir)
+        case Success(tr1, x) => {
+          val s: AnyInstructions.sameAs[S] = stupidScala(second)
+          tr1 +: s.run(workingDir)
+        }
       }
     }
 
@@ -115,14 +118,17 @@ case object instructions {
   case class ->-[
     F <: AnyInstructions,
     S <: AnyInstructions
-  ](val first: AnyInstructions.sameAs[F],
-    val second: AnyInstructions.sameAs[S]
+  ](val first: F,
+    val second: S
   ) extends AnyCombinedInstructions with Instructions[S#Out] {
     type First = F
     type Second = S
 
     final def run(workingDir: File): Result[Out] = {
-      first.run(workingDir).trace +: second.run(workingDir)
+      val f: AnyInstructions.sameAs[F] = stupidScala(first)
+      val s: AnyInstructions.sameAs[S] = stupidScala(second)
+
+      f.run(workingDir).trace +: s.run(workingDir)
     }
 
     override def toString = s"(${first.toString} ->- ${second.toString})"
@@ -133,14 +139,16 @@ case object instructions {
   case class -|-[
     F <: AnyInstructions,
     S <: AnyInstructions { type Out = F#Out }
-  ](val first: AnyInstructions.sameAs[F],
-    val second: AnyInstructions.sameAs[S]
+  ](val first: F,
+    val second: S
   ) extends AnyCombinedInstructions with Instructions[S#Out] {
     type First = F
     type Second = S
 
     final def run(workingDir: File): Result[Out] = {
-      first.run(workingDir) match {
+      val f: AnyInstructions.sameAs[F] = stupidScala(first)
+
+      f.run(workingDir) match {
         case Failure(tr)  => tr +: second.run(workingDir)
         case s@Success(tr, x) => s
       }
@@ -150,19 +158,19 @@ case object instructions {
   }
 
 
-  implicit def instructionsSyntax[X, I <: AnyInstructions](x: X)(implicit toInst: X => AnyInstructions.sameAs[I]):
+  implicit def instructionsSyntax[X, I <: AnyInstructions](x: X)(implicit toInst: X => I):
     InstructionsSyntax[I] =
     InstructionsSyntax[I](toInst(x))
 
-  case class InstructionsSyntax[I <: AnyInstructions](i: AnyInstructions.sameAs[I]) {
+  case class InstructionsSyntax[I <: AnyInstructions](i: I) {
 
-    def -&-[U <: AnyInstructions](u: AnyInstructions.sameAs[U]): I -&- U = instructions.-&-(i, u)
-    def ->-[U <: AnyInstructions](u: AnyInstructions.sameAs[U]): I ->- U = instructions.->-(i, u)
-    def -|-[U <: AnyInstructions { type Out = I#Out }](u: AnyInstructions.sameAs[U]): I -|- U = instructions.-|-(i, u)
+    def -&-[U <: AnyInstructions](u: U): I -&- U = instructions.-&-(i, u)
+    def ->-[U <: AnyInstructions](u: U): I ->- U = instructions.->-(i, u)
+    def -|-[U <: AnyInstructions { type Out = I#Out }](u: U): I -|- U = instructions.-|-(i, u)
   }
 
   @SuppressWarnings(Array("org.brianmckenna.wartremover.warts.AsInstanceOf", "org.brianmckenna.wartremover.warts.IsInstanceOf"))
-  implicit final def stupidScala[I <: AnyInstructions](i: I): AnyInstructions.sameAs[I] = {
+  final def stupidScala[I <: AnyInstructions](i: I): AnyInstructions.sameAs[I] = {
 
     i.asInstanceOf[AnyInstructions.sameAs[I]]
   }
