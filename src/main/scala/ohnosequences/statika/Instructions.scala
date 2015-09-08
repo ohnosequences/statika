@@ -205,6 +205,7 @@ case object instructions {
 
   case class CmdInstructions(seq: Seq[String]) extends SimpleInstructions[String]({
     workingDir: File =>
+      println("===> " + seq.mkString(" "))
       Try( Process(seq, workingDir).!! ) match {
         case util.Success(output) => Success[String](Seq(seq.mkString(" ")), output)
         case util.Failure(e) => Failure[String](Seq(e.getMessage))
