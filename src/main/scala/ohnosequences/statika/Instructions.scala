@@ -161,7 +161,11 @@ case object instructions {
     def -|-[U <: AnyInstructions { type Out = I#Out }](u: AnyInstructions.sameAs[U]): I -|- U = instructions.-|-(i, u)
   }
 
-  implicit def stupidScala[I <: AnyInstructions](i: I): AnyInstructions.sameAs[I] = i
+  @SuppressWarnings(Array("org.brianmckenna.wartremover.warts.AsInstanceOf", "org.brianmckenna.wartremover.warts.IsInstanceOf"))
+  implicit final def stupidScala[I <: AnyInstructions](i: I): AnyInstructions.sameAs[I] = {
+
+    i.asInstanceOf[AnyInstructions.sameAs[I]]
+  }
 
 
   import sys.process.Process
