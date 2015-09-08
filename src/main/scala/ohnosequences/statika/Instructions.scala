@@ -9,27 +9,34 @@ them.
 
 case object results {
 
-  sealed trait AnyResult {
-    type Out
-    val  out: Option[Out]
+  sealed trait AnyResult { self =>
+
+    type O
+    val  out: Option[O]
 
     val trace: Seq[String]
     val hasFailures: Boolean
     lazy val isSuccessful: Boolean = ! hasFailures
 
-    def prependTrace(msgs: Seq[String]): Result[Out]
+    @SuppressWarnings(Array("org.brianmckenna.wartremover.warts.AsInstanceOf", "org.brianmckenna.wartremover.warts.IsInstanceOf"))
+    final def prependTrace(msgs: Seq[String]): AnyResult { type O = self.O } = this match {
+
+      case Failure(tr) => Failure(msgs ++ tr)
+
+      case Success(tr, v:O) => Success(msgs ++ tr, v)
+    }
   }
 
-
-  sealed abstract class Result[O] extends AnyResult {
-    type Out = O
+  sealed abstract class Result[O0] extends AnyResult {
+    type O = O0
   }
 
-  case class Failure[O](val trace: Seq[String]) extends Result[O] {
-    val out: Option[Out] = None
+  case class Failure[O0](val trace: Seq[String]) extends Result[O0] {
+
+    val out: Option[O] = None
     val hasFailures = true
 
-    def prependTrace(msgs: Seq[String]): Failure[Out] = Failure[Out](msgs ++ trace)
+    // def prependTrace(msgs: Seq[String]): Failure[O0] = Failure(msgs ++ trace)
   }
 
   object Failure {
@@ -37,11 +44,11 @@ case object results {
     def apply[O](msg: String): Failure[O] = Failure(Seq(msg))
   }
 
-  case class Success[O](val trace: Seq[String], o: O) extends Result[O] {
-    val  out: Option[Out] = Some(o)
+  case class Success[O0](val trace: Seq[String], o: O0) extends Result[O0] {
+    val  out: Option[O0] = Some(o)
     val hasFailures = false
 
-    def prependTrace(msgs: Seq[String]): Success[Out] = Success[Out](msgs ++ trace, o)
+    // def prependTrace(msgs: Seq[String]): Success[O0] = Success[O0](msgs ++ trace, o)
   }
 
   object Success {
@@ -50,10 +57,10 @@ case object results {
   }
 
 
-  implicit def resultSyntax[O](r: Result[O]): ResultSyntax[O] = ResultSyntax[O](r)
-  case class ResultSyntax[O](r: Result[O]) {
-    def +:(msgs: Seq[String]): Result[O] = r.prependTrace(msgs)
-  }
+  // implicit def resultSyntax[R <: AnyResult](r: Result[O]): ResultSyntax[O] = ResultSyntax[O](r)
+  // case class ResultSyntax[O](r: Result[O]) {
+  //   def +:(msgs: Seq[String]): Result[O] = r.prependTrace(msgs)
+  // }
 
 }
 
@@ -65,9 +72,11 @@ case object instructions {
 
 
   trait AnyInstructions {
+
     type Out
 
-    def run(workingDir: File): Result[Out]
+    type R = AnyResult { type O = Out }
+    def run(workingDir: File): R
   }
 
   object AnyInstructions {
@@ -77,14 +86,18 @@ case object instructions {
     type withOut[O] = AnyInstructions { type Out = O }
   }
 
-  trait Instructions[O] extends AnyInstructions { type Out = O }
+  trait Instructions[O] extends AnyInstructions {
+
+    type Out = O
+    // type R = AnyResult { type O = Out }
+  }
 
   trait AnyCombinedInstructions extends AnyInstructions {
     type First <: AnyInstructions
-    val  first: AnyInstructions.sameAs[First]
+    val  first: First
 
     type Second <: AnyInstructions
-    val  second: AnyInstructions.sameAs[Second]
+    val  second: Second
 
     // type Out = Second#Out
   }
@@ -94,16 +107,23 @@ case object instructions {
   case class -&-[
     F <: AnyInstructions,
     S <: AnyInstructions
-  ](val first: AnyInstructions.sameAs[F],
-    val second: AnyInstructions.sameAs[S]
+  ](val first: F,
+    val second: S
   ) extends AnyCombinedInstructions with Instructions[S#Out] {
     type First = F
     type Second = S
 
-    final def run(workingDir: File): Result[Out] = {
+    // type R = Second#R
+
+    final def run(workingDir: File): R = {
       first.run(workingDir) match {
-        case Failure(tr)  => Failure(tr)
-        case Success(tr1, x) => tr1 +: second.run(workingDir)
+        case Failure(tr)  => Failure[Second#Out](tr)
+        case Success(tr1, x) => {
+
+          val s: AnyInstructions.sameAs[S] = stupidScala(second)
+          val uh: AnyResult { type O = S#Out } = s.run(workingDir)
+          uh.prependTrace(tr1)
+        }
       }
     }
 
@@ -115,14 +135,16 @@ case object instructions {
   case class ->-[
     F <: AnyInstructions,
     S <: AnyInstructions
-  ](val first: AnyInstructions.sameAs[F],
-    val second: AnyInstructions.sameAs[S]
+  ](val first: F,//AnyInstructions.sameAs[F],
+    val second: S //AnyInstructions.sameAs[S]
   ) extends AnyCombinedInstructions with Instructions[S#Out] {
     type First = F
     type Second = S
 
-    final def run(workingDir: File): Result[Out] = {
-      first.run(workingDir).trace +: second.run(workingDir)
+    final def run(workingDir: File): R = {
+
+      val s: AnyInstructions.sameAs[S] = stupidScala(second)
+      s.run(workingDir).prependTrace( first.run(workingDir).trace )
     }
 
     override def toString = s"(${first.toString} ->- ${second.toString})"
@@ -133,15 +155,17 @@ case object instructions {
   case class -|-[
     F <: AnyInstructions,
     S <: AnyInstructions { type Out = F#Out }
-  ](val first: AnyInstructions.sameAs[F],
-    val second: AnyInstructions.sameAs[S]
+  ](val first: F,//AnyInstructions.sameAs[F],
+    val second: S//AnyInstructions.sameAs[S]
   ) extends AnyCombinedInstructions with Instructions[S#Out] {
     type First = F
     type Second = S
 
-    final def run(workingDir: File): Result[Out] = {
-      first.run(workingDir) match {
-        case Failure(tr)  => tr +: second.run(workingDir)
+    final def run(workingDir: File): R = {
+
+      val f: AnyInstructions.sameAs[F] = stupidScala(first)
+      f.run(workingDir) match {
+        case Failure(tr) => second.run(workingDir).prependTrace(tr)
         case s@Success(tr, x) => s
       }
     }
@@ -150,19 +174,23 @@ case object instructions {
   }
 
 
-  implicit def instructionsSyntax[X, I <: AnyInstructions](x: X)(implicit toInst: X => AnyInstructions.sameAs[I]):
+  implicit def instructionsSyntax[X, I <: AnyInstructions](x: I):
     InstructionsSyntax[I] =
-    InstructionsSyntax[I](toInst(x))
+    InstructionsSyntax[I](x)
 
-  case class InstructionsSyntax[I <: AnyInstructions](i: AnyInstructions.sameAs[I]) {
+  case class InstructionsSyntax[I <: AnyInstructions](i: I) {
 
-    def -&-[U <: AnyInstructions](u: AnyInstructions.sameAs[U]): I -&- U = instructions.-&-(i, u)
-    def ->-[U <: AnyInstructions](u: AnyInstructions.sameAs[U]): I ->- U = instructions.->-(i, u)
-    def -|-[U <: AnyInstructions { type Out = I#Out }](u: AnyInstructions.sameAs[U]): I -|- U = instructions.-|-(i, u)
+    def -&-[U <: AnyInstructions](u: U): I -&- U = instructions.-&-(i, u)
+    def ->-[U <: AnyInstructions](u: U): I ->- U = instructions.->-(i, u)
+    def -|-[U <: AnyInstructions { type Out = I#Out }](u: U): I -|- U = instructions.-|-(i, u)
   }
 
-  implicit def stupidScala[I <: AnyInstructions](i: I): AnyInstructions.sameAs[I] = i
+  @SuppressWarnings(Array("org.brianmckenna.wartremover.warts.AsInstanceOf", "org.brianmckenna.wartremover.warts.IsInstanceOf"))
+  def stupidScala[I <: AnyInstructions](i: I): AnyInstructions.sameAs[I] = {
 
+    println { s"this is really ${i}"}
+    i.asInstanceOf[AnyInstructions.sameAs[I]]
+  }
 
   import sys.process.Process
   import util.Try

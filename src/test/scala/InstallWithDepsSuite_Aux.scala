@@ -27,7 +27,7 @@ object FooBundles {
     def dir(d: String) = new java.io.File(d)
 
     def instructions: AnyInstructions =
-      Seq("echo", "bar") -&-
+      cmd("echo")("bar") -&-
       cmd("cat")("qux") ->-
       failure("just wanna fail") -&-
       cmd("ls")("-al") -&-

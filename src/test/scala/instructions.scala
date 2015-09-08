@@ -34,6 +34,9 @@ class InstructionsSuite extends org.scalatest.FunSuite {
     assertFailure{ yes -&- no }
     assertFailure{ no  -&- yes }
     assertSuccess{ yes -&- yes }
+
+    val list = List[AnyInstructions](say("hola!"), say("lalala"))
+    val fold = list.reduce[AnyInstructions]( (a, b) => instructions.-&-(a, b) )
   }
 
   test("test -|- combinator") {
