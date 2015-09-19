@@ -178,10 +178,10 @@ object amazonLinuxAMIs extends Module(amis, api) {
         case HVM => "ami-c90897be"
         case PV  => "ami-cf0897b8"
       }
-      // case Frankfurt          => virt match {
-      //   case HVM => "ami-b0221fad"
-      //   case PV  => "ami-b6221fab"
-      // }
+      case Frankfurt          => virt match {
+        case HVM => "ami-b4b0b7a9"
+        case PV  => "ami-b6b0b7ab"
+      }
       case Singapore          => virt match {
         case HVM => "ami-32d8e960"
         case PV  => "ami-1cd8e94e"
@@ -198,10 +198,10 @@ object amazonLinuxAMIs extends Module(amis, api) {
         case HVM => "ami-bd2890a0"
         case PV  => "ami-bf2890a2"
       }
-      // case Beijin             => virt match {
-      //   case HVM => "ami-f639abcf"
-      //   case PV  => "ami-f439abcd"
-      // }
+      case Beijing            => virt match {
+        case HVM => "ami-44c4587d"
+        case PV  => "ami-46c4587f"
+      }
       case GovCloud           => virt match {
         case HVM => "ami-7db2d35e"
         case PV  => "ami-75b2d356"
