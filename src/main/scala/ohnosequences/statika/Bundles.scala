@@ -134,6 +134,23 @@ case object bundles {
     lazy val name: String = this.toString
   }
 
+  abstract class CompatibleWithPrefix[
+    E <: AnyEnvironment,
+    B <: AnyBundle
+  ](val prefixName: String
+  )(val environment: E,
+    val bundle: B,
+    val metadata: AnyArtifactMetadata
+  ) extends AnyCompatible {
+    type Me = this.type;
+    lazy val me: Me = this: Me
+
+    type Environment = E
+    type Bundle = B
+
+    lazy val name: String = this.toString
+  }
+
   abstract class Compatible[
     E <: AnyEnvironment,
     B <: AnyBundle

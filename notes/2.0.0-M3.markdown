@@ -1,0 +1,3 @@
+This milestone has few changes since M2.
+
+* Fixed the compatibles names (be8ea944eecf00cc447ab9873fefa35629b5e75f)
