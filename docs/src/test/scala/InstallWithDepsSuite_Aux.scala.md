@@ -9,17 +9,17 @@ object FooBundles {
 
   abstract class TestBundle(d: AnyBundle*) extends Bundle(d: _*) {
 
-    def install: Results = success(bundleName + " is installed")
+    def instructions: AnyInstructions = say(bundleName + " is installed")
   }
 
 
   case object Bar extends TestBundle
 
   case object Foo extends Bundle(Bar) {
-    def install: Results =
-      "ls" #| "grep .sbt" -&-
-      "echo Foo" ->-
-      success(bundleFullName)
+    def instructions: AnyInstructions =
+      cmd("ls")() -&-
+      cmd("echo")("Foo") ->-
+      say(bundleFullName)
   }
 
 
@@ -28,11 +28,12 @@ object FooBundles {
 
     def dir(d: String) = new java.io.File(d)
 
-    def install: Results =
+    def instructions: AnyInstructions =
       Seq("echo", "bar") -&-
-      "cat qux" @@ dir(".") -&- // should fail here
-      "ls -al" @@ dir("/.") ->-
-      success(bundleName)
+      cmd("cat")("qux") ->-
+      failure("just wanna fail") -&-
+      cmd("ls")("-al") -&-
+      say(bundleName)
   }
 
   case object Buzz  extends TestBundle(Foo, Qux)
@@ -43,7 +44,7 @@ object FooBundles {
 
 
   case object Env extends Environment {
-    def install: Results = success(s"Environment ${bundleName} is set up")
+    def instructions: AnyInstructions = say(s"Environment ${bundleName} is set up")
   }
 
   case object TestMetadata extends AnyArtifactMetadata {
@@ -53,7 +54,7 @@ object FooBundles {
     val version: String       = "2.0.0"
     val artifactUrl: String   = "whatever"
   }
-  
+
   implicit object BarEnv    extends Compatible(Env, Bar, TestMetadata)
   implicit object FooEnv    extends Compatible(Env, Foo, TestMetadata)
   implicit object QuuxEnv   extends Compatible(Env, Quux, TestMetadata)
@@ -74,3 +75,4 @@ object FooBundles {
 [test/scala/BundleTest.scala]: BundleTest.scala.md
 [test/scala/InstallWithDepsSuite.scala]: InstallWithDepsSuite.scala.md
 [test/scala/InstallWithDepsSuite_Aux.scala]: InstallWithDepsSuite_Aux.scala.md
+[test/scala/instructions.scala]: instructions.scala.md

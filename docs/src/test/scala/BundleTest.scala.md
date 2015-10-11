@@ -51,3 +51,4 @@ class BuhSuite extends org.scalatest.FunSuite {
 [test/scala/BundleTest.scala]: BundleTest.scala.md
 [test/scala/InstallWithDepsSuite.scala]: InstallWithDepsSuite.scala.md
 [test/scala/InstallWithDepsSuite_Aux.scala]: InstallWithDepsSuite_Aux.scala.md
+[test/scala/instructions.scala]: instructions.scala.md

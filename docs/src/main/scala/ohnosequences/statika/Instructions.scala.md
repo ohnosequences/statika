@@ -11,151 +11,228 @@ them.
 
 
 ```scala
-object instructions {
-```
+case object results {
 
- ### Install result types
+  sealed trait AnyResult {
+    type Out
+    val  out: Option[Out]
 
- Basically, result is always either success or failure (with informative message):
-
-
-```scala
-  type FailureMessage = String
-  type SuccessMessage = String
-  type Result = Either[FailureMessage, SuccessMessage]
-```
-
- As the installation process consists of a sequence of steps, we want to know the result of
- each step. `Results` type is just a cover on a the list of results of each installation
- step. It also contains some operations to combine such steps (i.e. their results).
-
-
-```scala
-  trait Results {
-
-    val trace: List[Result]
+    val trace: Seq[String]
     val hasFailures: Boolean
     lazy val isSuccessful: Boolean = ! hasFailures
-```
 
- Combinators:
- * `A ->- B` — "and then": if `A` was successful, return `B`
- * `A -&- B` — "and": if `A` was successful, append it to `B`
- * `A -|- B` — "or": irrespectively of `A` result, append it to `B`
-
- Note that the second argument is lazy and it can be anything that can be converted to
- `Results`.
-
-
-```scala
-    def ->-[T : IsResult](ts: => T): Results
-    def -&-[T : IsResult](ts: => T): Results
-    def -|-[T : IsResult](ts: => T): Results
-
+    def prependTrace(msgs: Seq[String]): Result[Out]
   }
 
-  // Type alias for context bounds (instead of view bounds)
-  type IsResult[T] = T => Results
-```
 
- Type alias which can be used for folding of install results. Particularly, it is used in the
- `Distribution` method `installWithDeps`, as the way of traversing the list of dependencies is
- important there.
-
-
-```scala
-  type InstallStrategy = (Results, Results) => Results
-  val failFast:     InstallStrategy = _ -&- _
-  val failTolerant: InstallStrategy = _ -|- _
-```
-
- Now, we want not just to operate on a list of results, but to have an indicator of how things
- are going for the whole list. `Success` represents a list, where all results are positive and
- defines the appropriate combinators:
-
-
-```scala
-  case class Success(val trace: List[Result]) extends Results {
-    
-    val hasFailures = false
-
-    def ->-[T : IsResult](ts: => T) = ts
-    def -&-[T : IsResult](ts: => T) = implicitly[Results](ts) match {
-      case Success(tr) => Success(trace ::: tr)
-      case Failure(tr) => Failure(trace ::: tr)
-    }
-    def -|-[T : IsResult](ts: => T) = Success(trace ::: ts.trace)
+  sealed abstract class Result[O] extends AnyResult {
+    type Out = O
   }
-```
 
-`Failure` represents a list of results, among which there is at least one negative:
-
-```scala
-  case class Failure(val trace: List[Result]) extends Results {
-    
+  case class Failure[O](val trace: Seq[String]) extends Result[O] {
+    val out: Option[Out] = None
     val hasFailures = true
 
-    def ->-[T : IsResult](ts: => T) = this
-    def -&-[T : IsResult](ts: => T) = this
-    def -|-[T : IsResult](ts: => T) = implicitly[Results](ts) match {
-      case Success(tr) => Success(trace ::: tr)
-      case Failure(tr) => Failure(trace ::: tr)
+    def prependTrace(msgs: Seq[String]): Failure[Out] = Failure[Out](msgs ++ trace)
+  }
+
+  object Failure {
+
+    def apply[O](msg: String): Failure[O] = Failure(Seq(msg))
+  }
+
+  case class Success[O](val trace: Seq[String], o: O) extends Result[O] {
+    val  out: Option[Out] = Some(o)
+    val hasFailures = false
+
+    def prependTrace(msgs: Seq[String]): Success[Out] = Success[Out](msgs ++ trace, o)
+  }
+
+  object Success {
+
+    def apply[O](msg: String, o: O): Success[O] = Success[O](Seq(msg), o)
+  }
+
+
+  implicit def resultSyntax[O](r: Result[O]): ResultSyntax[O] = ResultSyntax[O](r)
+  case class ResultSyntax[O](r: Result[O]) {
+    def +:(msgs: Seq[String]): Result[O] = r.prependTrace(msgs)
+  }
+
+}
+
+
+case object instructions {
+
+  import java.io.File
+  import results._
+
+
+  trait AnyInstructions {
+    type Out
+
+    def run(workingDir: File): Result[Out]
+  }
+
+  object AnyInstructions {
+
+    type sameAs[I <: AnyInstructions] = I with AnyInstructions { type Out = I#Out }
+
+    type withOut[O] = AnyInstructions { type Out = O }
+  }
+
+  trait Instructions[O] extends AnyInstructions { type Out = O }
+
+  trait AnyCombinedInstructions extends AnyInstructions {
+    type First <: AnyInstructions
+    val  first: First
+
+    type Second <: AnyInstructions
+    val  second: Second
+
+    // type Out = Second#Out
+  }
+```
+
+This executes second step only if the first one succeeded
+
+```scala
+  case class -&-[
+    F <: AnyInstructions,
+    S <: AnyInstructions
+  ](val first: F,
+    val second: S
+  ) extends AnyCombinedInstructions with Instructions[S#Out] {
+    type First = F
+    type Second = S
+
+    final def run(workingDir: File): Result[Out] = {
+      val f: AnyInstructions.sameAs[F] = stupidScala(first)
+      f.run(workingDir) match {
+        case Failure(tr)  => Failure(tr)
+        case Success(tr1, x) => {
+          val s: AnyInstructions.sameAs[S] = stupidScala(second)
+          tr1 +: s.run(workingDir)
+        }
+      }
+    }
+
+    override def toString = s"(${first.toString} -&- ${second.toString})"
+  }
+```
+
+This executes both steps irrespectively of the result of the first one
+
+```scala
+  case class ->-[
+    F <: AnyInstructions,
+    S <: AnyInstructions
+  ](val first: F,
+    val second: S
+  ) extends AnyCombinedInstructions with Instructions[S#Out] {
+    type First = F
+    type Second = S
+
+    final def run(workingDir: File): Result[Out] = {
+      val f: AnyInstructions.sameAs[F] = stupidScala(first)
+      val s: AnyInstructions.sameAs[S] = stupidScala(second)
+
+      f.run(workingDir).trace +: s.run(workingDir)
+    }
+
+    override def toString = s"(${first.toString} ->- ${second.toString})"
+  }
+```
+
+This executes second step only if the first one failed
+
+```scala
+  case class -|-[
+    F <: AnyInstructions,
+    S <: AnyInstructions { type Out = F#Out }
+  ](val first: F,
+    val second: S
+  ) extends AnyCombinedInstructions with Instructions[S#Out] {
+    type First = F
+    type Second = S
+
+    final def run(workingDir: File): Result[Out] = {
+      val f: AnyInstructions.sameAs[F] = stupidScala(first)
+
+      f.run(workingDir) match {
+        case Failure(tr)  => tr +: second.run(workingDir)
+        case s@Success(tr, x) => s
+      }
+    }
+
+    override def toString = s"(${first.toString} -|- ${second.toString})"
+  }
+
+
+  implicit def instructionsSyntax[X, I <: AnyInstructions](x: X)(implicit toInst: X => I):
+    InstructionsSyntax[I] =
+    InstructionsSyntax[I](toInst(x))
+
+  case class InstructionsSyntax[I <: AnyInstructions](i: I) {
+
+    def -&-[U <: AnyInstructions](u: U): I -&- U = instructions.-&-(i, u)
+    def ->-[U <: AnyInstructions](u: U): I ->- U = instructions.->-(i, u)
+    def -|-[U <: AnyInstructions { type Out = I#Out }](u: U): I -|- U = instructions.-|-(i, u)
+  }
+
+  @SuppressWarnings(Array("org.brianmckenna.wartremover.warts.AsInstanceOf", "org.brianmckenna.wartremover.warts.IsInstanceOf"))
+  final def stupidScala[I <: AnyInstructions](i: I): AnyInstructions.sameAs[I] = {
+
+    i.asInstanceOf[AnyInstructions.sameAs[I]]
+  }
+
+
+  import sys.process.Process
+  import util.Try
+
+  class SimpleInstructions[O](r: File => Result[O]) extends Instructions[O] {
+
+    def run(workingDir: File): Result[Out] = r(workingDir)
+  }
+
+  // case class JustDoIt[O](x: => Result[O]) extends SimpleInstructions[O](_ => x)
+
+  case class say(msg: String) extends SimpleInstructions[Unit](
+    _ => Success(Seq(msg), ())
+  )
+
+  case class success[O](msg: String, o: O) extends SimpleInstructions[O](
+    _ => Success[O](Seq(msg), o)
+  )
+
+  case class failure[O](msg: String) extends SimpleInstructions[O](
+    _ => Failure[O](Seq(msg))
+  )
+
+
+
+  object LazyTry {
+    def apply[T](t: => T): Instructions[T] = new Instructions[T] {
+
+      def run(workingDir: File): Result[Out] = Try(t) match {
+        case util.Success(output) => Success[T](this.toString, output)
+        case util.Failure(e) => Failure[T](e.getMessage)
+      }
     }
   }
-```
-
- For backwards compatibility and for convenience, there are simple "constructors" for the
- `Results` instances. You can think of `Results` just as about _lists of
- messages_ and as they are (implicitly) convertible to `List`, use all normal list operations
- on them. But be careful: if you combine them, better use the predefined combinators: `->-`,
- `-&-` and `-|-`, as they will preserve the sense of the installation process overall result.
 
 
-```scala
-  def success(msg: SuccessMessage): Results = Success(List(Right(msg)))
-  def failure(msg: FailureMessage): Results = Failure(List(Left(msg)))
-```
+  case class CmdInstructions(seq: Seq[String]) extends SimpleInstructions[String]({
+    workingDir: File =>
+      println("===> " + seq.mkString(" "))
+      Try( Process(seq, workingDir).!! ) match {
+        case util.Success(output) => Success[String](Seq(seq.mkString(" ")), output)
+        case util.Failure(e) => Failure[String](Seq(e.getMessage))
+      }
+  })
 
-### Install results of external commands
-
-```scala
-  import sys.process._
-  import java.io.File
-
-  // Adding method to run commands from a given path
-  implicit class SeqCWD(val cmd: Seq[String]) extends AnyVal {
-    def @@(path: File) = Process(cmd, path, "" -> "")
-  }
-  implicit class StrCWD(val cmd: String) extends AnyVal {
-    def @@(path: File) = Process(cmd, path, "" -> "")
-  }
-```
-
- Conversion from commands (`Process`) (or anything that can be treated as a command) to install
- results allows us to write concise and readable code: you can use `String`s or `Seq[String]`
- for expressing commands and combine them with `->-`, `-&-` or `-|-` and you don't need
- manually collect results of running each command, checking it's exit code and setting
- appropriate install result method for it — you just combine them and get informative trace of
- the run process as an output.
-
-
-```scala
-  type CmdLike[T] = T => ProcessBuilder
-
-  def runCommand[T : CmdLike](cmd: T)(
-      failureMsg: String = cmd.toString
-    , successMsg: String = cmd.toString
-  ): Results = {
-    if(cmd.! == 0) success(successMsg)
-    else failure(failureMsg)
-  }
-```
-
-### Implicit conversion from ProcessBuilder-like things to Results
-
-```scala
-  implicit def cmdToResult[T : CmdLike](cmd: T): Results = runCommand(cmd)()
-  implicit def resultsToList[T : IsResult](r: T): List[Result] = r.trace
+  def cmd(command: String)(args: String*): CmdInstructions = CmdInstructions(command +: args)
+  implicit def seqToInstructions(s: Seq[String]): CmdInstructions = CmdInstructions(s)
 
 }
 
@@ -169,3 +246,4 @@ object instructions {
 [test/scala/BundleTest.scala]: ../../../../test/scala/BundleTest.scala.md
 [test/scala/InstallWithDepsSuite.scala]: ../../../../test/scala/InstallWithDepsSuite.scala.md
 [test/scala/InstallWithDepsSuite_Aux.scala]: ../../../../test/scala/InstallWithDepsSuite_Aux.scala.md
+[test/scala/instructions.scala]: ../../../../test/scala/instructions.scala.md
