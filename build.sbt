@@ -14,7 +14,3 @@ libraryDependencies ++= Seq (
 
 testOptions       in Test += Tests.Argument("-oD")
 parallelExecution in Test := false
-
-incOptions := incOptions.value.withNameHashing(false)
-
-dependencyOverrides += "org.scala-lang.modules" %% "scala-xml" % "1.0.4"
