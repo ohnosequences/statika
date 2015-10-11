@@ -1,0 +1,6 @@
+Changes since M3:
+
+* Rewrote instructions part: declaring instruction steps statically, then running them
+* Changed the meaning of combinators: and, or, xor
+* Fixed bug related to non-lazy Try; Added LazyTry
+* Added some primitive instructions tests
