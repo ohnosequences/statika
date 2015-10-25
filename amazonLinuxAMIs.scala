@@ -74,8 +74,11 @@ object amazonLinuxAMIs extends Module(amis, api) {
 
     /* This is the main part of the script: building applicator. */
     // TODO: install directory should be configurable
+    // FIXME: make device name configurable (and dependent on the instance type)
     private def building[C <: AnyCompatible](comp: C): String = s"""
       |mkdir -p ${workingDir}
+      |mkfs -t ext4 /dev/sdb
+      |mount /dev/sdb ${workingDir}
       |cd ${workingDir}
       |
       |echo "object apply { " > apply.scala
