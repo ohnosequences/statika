@@ -34,7 +34,7 @@ trait AnyBundle {
     ( ( bundleDependencies flatMap { _.bundleFullDependencies } ) ++ bundleDependencies ).distinct
 
 
-  /* Instructions determine the purpuse of the bundle in a declarative form */
+  /* Instructions determine the purpose of the bundle in a declarative form */
   // TODO: should we preserve the instructions type?
   def instructions: AnyInstructions
 
@@ -55,7 +55,7 @@ abstract class Bundle(d: AnyBundle*) extends AnyBundle { val bundleDependencies 
 /* A module is just a bundle with an empty install method */
 trait AnyModule extends AnyBundle {
 
-  final def instructions: AnyInstructions = success(s"Module ${bundleFullName} is installed", ())
+  final def instructions: AnyInstructions = say(s"Module ${bundleFullName} is installed")
 }
 
 
