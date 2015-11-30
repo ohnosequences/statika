@@ -1,8 +1,8 @@
 package ohnosequences.statika.tests
 
-import ohnosequences.statika.bundles._
+import ohnosequences.statika._
 
-class NameSuite extends org.scalatest.FunSuite { 
+class NameSuite extends org.scalatest.FunSuite {
   object Foo {
     case object bun extends Module
   }

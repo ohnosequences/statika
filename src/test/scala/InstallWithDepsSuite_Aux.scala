@@ -1,6 +1,6 @@
 package ohnosequences.statika.tests
 
-import ohnosequences.statika._, bundles._, instructions._
+import ohnosequences.statika._
 import sys.process._
 
 object FooBundles {
