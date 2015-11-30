@@ -1,4 +1,4 @@
-package ohnosequences.statika.results
+package ohnosequences.statika
 
 
 sealed trait AnyResult {

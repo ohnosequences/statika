@@ -1,4 +1,6 @@
-package ohnosequences.statika.instructions
+package ohnosequences.statika
+
+import java.io.File
 
 /*
 ## Installation utilities
@@ -6,11 +8,6 @@ package ohnosequences.statika.instructions
 This module defines convenient types for presenting installation results and methods to work with
 them.
 */
-
-
-import ohnosequences.statika._, results._
-import java.io.File
-
 
 trait AnyInstructions {
   type Out
@@ -109,9 +106,9 @@ case class -|-[
 
 case class InstructionsSyntax[I <: AnyInstructions](i: I) {
 
-  def -&-[U <: AnyInstructions](u: U): I -&- U = instructions.-&-(i, u)
-  def ->-[U <: AnyInstructions](u: U): I ->- U = instructions.->-(i, u)
-  def -|-[U <: AnyInstructions { type Out = I#Out }](u: U): I -|- U = instructions.-|-(i, u)
+  def -&-[U <: AnyInstructions](u: U): I -&- U = ohnosequences.statika.-&-(i, u)
+  def ->-[U <: AnyInstructions](u: U): I ->- U = ohnosequences.statika.->-(i, u)
+  def -|-[U <: AnyInstructions { type Out = I#Out }](u: U): I -|- U = ohnosequences.statika.-|-(i, u)
 }
 
 
@@ -122,21 +119,6 @@ class SimpleInstructions[O](r: File => Result[O]) extends Instructions[O] {
 
   def run(workingDir: File): Result[Out] = r(workingDir)
 }
-
-// case class JustDoIt[O](x: => Result[O]) extends SimpleInstructions[O](_ => x)
-
-case class say(msg: String) extends SimpleInstructions[Unit](
-  _ => Success(Seq(msg), ())
-)
-
-case class success[O](msg: String, o: O) extends SimpleInstructions[O](
-  _ => Success[O](Seq(msg), o)
-)
-
-case class failure[O](msg: String) extends SimpleInstructions[O](
-  _ => Failure[O](Seq(msg))
-)
-
 
 
 object LazyTry {

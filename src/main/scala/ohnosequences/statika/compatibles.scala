@@ -1,4 +1,7 @@
-package ohnosequences.statika.bundles
+package ohnosequences.statika
+
+import java.io.File
+
 
 trait AnyArtifactMetadata {
   val organization: String

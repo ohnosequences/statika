@@ -1,4 +1,7 @@
-package ohnosequences.statika.bundles
+package ohnosequences.statika
+
+import java.nio.file._
+import java.io.File
 
 /* ## Bundles
 
@@ -13,10 +16,6 @@ package ohnosequences.statika.bundles
    dependencies are already installed, or it can deploy some data and provide a convenient interface
    for the bundles which are dependent on it. For these purposes, there is an `install` method.
 */
-
-import ohnosequences.statika._, instructions._, results._
-import java.nio.file._
-import java.io.File
 
 trait AnyBundle {
 
