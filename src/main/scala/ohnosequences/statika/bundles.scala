@@ -24,7 +24,7 @@ trait AnyBundle {
   lazy val bundleFullName: String = this.getClass.getName.split("\\$").mkString(".")
 
   /* And a short version for convenience */
-  lazy val bundleName: String = bundleFullName.split('.').last
+  lazy val bundleName: String = bundleFullName.split('.').lastOption.getOrElse(this.toString)
 
   /* Every bundle has a list of other bundles on which this one is directly dependent */
   val  bundleDependencies: List[AnyBundle]

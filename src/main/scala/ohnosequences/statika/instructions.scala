@@ -2,6 +2,7 @@ package ohnosequences.statika
 
 import java.io.File
 import sys.process._
+import util.Try
 
 /*
 ## Installation utilities
@@ -113,8 +114,6 @@ case class InstructionsSyntax[I <: AnyInstructions](i: I) {
 }
 
 
-import sys.process.Process
-import util.Try
 
 class SimpleInstructions[O](r: File => Result[O]) extends Instructions[O] {
 
