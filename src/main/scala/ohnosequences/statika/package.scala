@@ -1,5 +1,7 @@
 package ohnosequences
 
+import sys.process._
+
 package object statika {
 
   implicit def resultSyntax[O](r: Result[O]): ResultSyntax[O] = ResultSyntax[O](r)
@@ -26,6 +28,9 @@ package object statika {
 
 
   def cmd(command: String)(args: String*): CmdInstructions = CmdInstructions(command +: args)
+  def process(p: ProcessBuilder): ProcessInstructions = ProcessInstructions(p)
+
   implicit def seqToInstructions(s: Seq[String]): CmdInstructions = CmdInstructions(s)
+  implicit def procBuilderToInstructions(p: ProcessBuilder): ProcessInstructions = ProcessInstructions(p)
 
 }

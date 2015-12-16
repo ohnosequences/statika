@@ -1,6 +1,7 @@
 package ohnosequences.statika
 
 import java.io.File
+import sys.process._
 
 /*
 ## Installation utilities
@@ -137,6 +138,16 @@ case class CmdInstructions(seq: Seq[String]) extends SimpleInstructions[String](
     println("===> " + seq.mkString(" "))
     Try( Process(seq, workingDir).!! ) match {
       case util.Success(output) => Success[String](Seq(seq.mkString(" ")), output)
+      case util.Failure(e) => Failure[String](Seq(e.getMessage))
+    }
+})
+
+
+case class ProcessInstructions(proc: ProcessBuilder) extends SimpleInstructions[String]({
+  workingDir: File =>
+    println("===> " + proc.toString)
+    Try( proc.!! ) match {
+      case util.Success(output) => Success[String](Seq(proc.toString), output)
       case util.Failure(e) => Failure[String](Seq(e.getMessage))
     }
 })
