@@ -23,8 +23,6 @@ artifacts/
 data/in/
 data/out/
 
-*.yml
-
 .tags*
 .atom*
 .ensime*
