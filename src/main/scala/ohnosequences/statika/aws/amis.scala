@@ -7,7 +7,7 @@ to control, that all the members are installed with the same image.
 
 package ohnosequences.statika.aws
 
-import ohnosequences.statika._, bundles._, instructions._, results._
+import ohnosequences.statika._
 import ohnosequences.awstools._, ec2._
 import java.net.URL
 

@@ -1,6 +1,6 @@
 package ohnosequences.statika
 
-import ohnosequences.statika.bundles._
+import ohnosequences.statika._
 
 package object aws {
 
