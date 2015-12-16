@@ -1,6 +1,9 @@
 
 ```scala
 package ohnosequences.statika
+
+import java.nio.file._
+import java.io.File
 ```
 
 ## Bundles
@@ -18,174 +21,90 @@ for the bundles which are dependent on it. For these purposes, there is an `inst
 
 
 ```scala
-case object bundles {
-
-  import instructions._, results._
-  import java.nio.file._
-  import java.io.File
-
-  trait AnyBundle {
+trait AnyBundle {
 ```
 
 Every bundle has a fully qualified name for distinction
 
 ```scala
-    // NOTE: if you define a bundle inside of an abstract class, this prefix will be wrong
-    lazy val bundleFullName: String = this.getClass.getName.split("\\$").mkString(".")
+  // NOTE: if you define a bundle inside of an abstract class, this prefix will be wrong
+  lazy val bundleFullName: String = this.getClass.getName.split("\\$").mkString(".")
 ```
 
 And a short version for convenience
 
 ```scala
-    lazy val bundleName: String = bundleFullName.split('.').last
+  lazy val bundleName: String = bundleFullName.split('.').lastOption.getOrElse(this.toString)
 ```
 
 Every bundle has a list of other bundles on which this one is directly dependent
 
 ```scala
-    val  bundleDependencies: List[AnyBundle]
+  val  bundleDependencies: List[AnyBundle]
 ```
 
 That is used for building a list of all transitive dependencies
 
 ```scala
-    lazy final val bundleFullDependencies: List[AnyBundle] =
-      ( ( bundleDependencies flatMap { _.bundleFullDependencies } ) ++ bundleDependencies ).distinct
+  lazy final val bundleFullDependencies: List[AnyBundle] =
+    ( ( bundleDependencies flatMap { _.bundleFullDependencies } ) ++ bundleDependencies ).distinct
 ```
 
-Instructions determine the purpuse of the bundle in a declarative form
+Instructions determine the purpose of the bundle in a declarative form
 
 ```scala
-    // TODO: should we preserve the instructions type?
-    def instructions: AnyInstructions
+  // TODO: should we preserve the instructions type?
+  def instructions: AnyInstructions
 
-    // def install: AnyResult = instructions.run(
-    //   Files.createTempDirectory(Paths.get("."), bundleName).toFile
-    // )
-  }
+  // def install: AnyResult = instructions.run(
+  //   Files.createTempDirectory(Paths.get("."), bundleName).toFile
+  // )
+}
 ```
 
 ### Auxiliary stuff
 
-  This constructor is convenient, because it takes just a value for the bundle dependencies and sets
-  the type-members and evaluates `bundleDependenciesTower`.
+This constructor is convenient, because it takes just a value for the bundle dependencies and sets
+the type-members and evaluates `bundleDependenciesTower`.
 
-  If you want to inherit from this class _abstractly_, you need to preserve the same implicit context and then you can extend it, providing the types explicitly. See [Environment code](Environment.md) for example.
+If you want to inherit from this class _abstractly_, you need to preserve the same implicit context and then you can extend it, providing the types explicitly. See [Environment code](Environment.md) for example.
 
 
 ```scala
-  abstract class Bundle(d: AnyBundle*) extends AnyBundle { val bundleDependencies = d.toList }
+abstract class Bundle(d: AnyBundle*) extends AnyBundle { val bundleDependencies = d.toList }
 ```
 
 A module is just a bundle with an empty install method
 
 ```scala
-  trait AnyModule extends AnyBundle {
+trait AnyModule extends AnyBundle {
 
-    final def instructions: AnyInstructions = success(s"Module ${bundleFullName} is installed", ())
-  }
+  final def instructions: AnyInstructions = say(s"Module ${bundleFullName} is installed")
+}
 
 
-  abstract class Module(d: AnyModule*) extends AnyModule { val bundleDependencies = d.toList }
+abstract class Module(d: AnyModule*) extends AnyModule { val bundleDependencies = d.toList }
 ```
 
 An environment is a bundle that is supposed to set up some context for other bundles installation
 
 ```scala
-  trait AnyEnvironment extends AnyBundle
+trait AnyEnvironment extends AnyBundle
 
-  abstract class Environment(d: AnyBundle*) extends AnyEnvironment { val bundleDependencies = d.toList }
-
-
-  trait AnyArtifactMetadata {
-    val organization: String
-    val artifact: String
-    val version: String
-    val artifactUrl: String
-  }
-
-
-  trait AnyCompatible {
-
-    val prefixName: String
-    val name: String
-    lazy val fullName: String = s"${prefixName}.${name}"
-
-    type Environment <: AnyEnvironment
-    val  environment: Environment
-
-    type Bundle <: AnyBundle
-    val  bundle: Bundle
-
-    val metadata: AnyArtifactMetadata
-
-    // TODO: combining strategy should be an option
-    def install: AnyResult = {
-      val workingDir = new File(".")
-
-      val allBundles: List[AnyBundle] =
-        environment.bundleFullDependencies ++
-        bundle.bundleFullDependencies :+
-        bundle
-
-      println(allBundles.toString)
-
-      allBundles.foldLeft[AnyResult](
-        Success(s"Installing bundle ${bundle.bundleName} with environment ${environment.bundleName}", ())
-      ){ (acc, x) =>
-        acc match {
-          case Failure(tr) => Failure(tr)
-          case Success(tr, _) => x.instructions.run(workingDir)
-        }
-      }
-    }
-
-
-  }
-
-  abstract class CompatibleWithPrefix[
-    E <: AnyEnvironment,
-    B <: AnyBundle
-  ](val prefixName: String
-  )(val environment: E,
-    val bundle: B,
-    val metadata: AnyArtifactMetadata
-  ) extends AnyCompatible {
-    type Me = this.type;
-    lazy val me: Me = this: Me
-
-    type Environment = E
-    type Bundle = B
-
-    lazy val name: String = this.toString
-  }
-
-  abstract class Compatible[
-    E <: AnyEnvironment,
-    B <: AnyBundle
-  ](val environment: E,
-    val bundle: B,
-    val metadata: AnyArtifactMetadata
-  ) extends AnyCompatible {
-    type Me = this.type;
-    lazy val me: Me = this: Me
-
-    type Environment = E
-    type Bundle = B
-
-    lazy val prefixName: String = this.getClass.getName.split("\\$").init.mkString(".")
-    lazy val name: String = this.toString
-  }
-
-}
+abstract class Environment(d: AnyBundle*) extends AnyEnvironment { val bundleDependencies = d.toList }
 
 ```
 
 
 
 
-[main/scala/ohnosequences/statika/Bundles.scala]: Bundles.scala.md
-[main/scala/ohnosequences/statika/Instructions.scala]: Instructions.scala.md
+[main/scala/ohnosequences/statika/aws/amis.scala]: aws/amis.scala.md
+[main/scala/ohnosequences/statika/aws/package.scala]: aws/package.scala.md
+[main/scala/ohnosequences/statika/bundles.scala]: bundles.scala.md
+[main/scala/ohnosequences/statika/compatibles.scala]: compatibles.scala.md
+[main/scala/ohnosequences/statika/instructions.scala]: instructions.scala.md
+[main/scala/ohnosequences/statika/package.scala]: package.scala.md
+[main/scala/ohnosequences/statika/results.scala]: results.scala.md
 [test/scala/BundleTest.scala]: ../../../../test/scala/BundleTest.scala.md
 [test/scala/InstallWithDepsSuite.scala]: ../../../../test/scala/InstallWithDepsSuite.scala.md
 [test/scala/InstallWithDepsSuite_Aux.scala]: ../../../../test/scala/InstallWithDepsSuite_Aux.scala.md

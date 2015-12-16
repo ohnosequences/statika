@@ -2,7 +2,7 @@
 ```scala
 package ohnosequences.statika.tests
 
-import ohnosequences.statika._, bundles._, instructions._
+import ohnosequences.statika._
 import sys.process._
 
 object FooBundles {
@@ -70,8 +70,13 @@ object FooBundles {
 
 
 
-[main/scala/ohnosequences/statika/Bundles.scala]: ../../main/scala/ohnosequences/statika/Bundles.scala.md
-[main/scala/ohnosequences/statika/Instructions.scala]: ../../main/scala/ohnosequences/statika/Instructions.scala.md
+[main/scala/ohnosequences/statika/aws/amis.scala]: ../../main/scala/ohnosequences/statika/aws/amis.scala.md
+[main/scala/ohnosequences/statika/aws/package.scala]: ../../main/scala/ohnosequences/statika/aws/package.scala.md
+[main/scala/ohnosequences/statika/bundles.scala]: ../../main/scala/ohnosequences/statika/bundles.scala.md
+[main/scala/ohnosequences/statika/compatibles.scala]: ../../main/scala/ohnosequences/statika/compatibles.scala.md
+[main/scala/ohnosequences/statika/instructions.scala]: ../../main/scala/ohnosequences/statika/instructions.scala.md
+[main/scala/ohnosequences/statika/package.scala]: ../../main/scala/ohnosequences/statika/package.scala.md
+[main/scala/ohnosequences/statika/results.scala]: ../../main/scala/ohnosequences/statika/results.scala.md
 [test/scala/BundleTest.scala]: BundleTest.scala.md
 [test/scala/InstallWithDepsSuite.scala]: InstallWithDepsSuite.scala.md
 [test/scala/InstallWithDepsSuite_Aux.scala]: InstallWithDepsSuite_Aux.scala.md
