@@ -1,0 +1,10 @@
+Changes since M4:
+
+* statika and aws-statika is now integrated as one project
+* restructured project packages, now only two imports needed:
+
+    ```scala
+    import ohnosequences.statika._
+    import ohnosequences.statika.aws._
+    ```
+* Added a constructor for building instructions from a `ProcessBuilder` (withouth `workingDir` management)
