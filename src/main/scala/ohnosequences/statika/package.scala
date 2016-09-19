@@ -1,5 +1,6 @@
 package ohnosequences
 
+import java.io.File
 import sys.process._
 
 package object statika {
@@ -19,7 +20,6 @@ package object statika {
   def failure[O](msg: String): SimpleInstructions[O] =
     new SimpleInstructions[O]( _ => Failure[O](Seq(msg)) )
 
-
   @SuppressWarnings(Array("org.brianmckenna.wartremover.warts.AsInstanceOf", "org.brianmckenna.wartremover.warts.IsInstanceOf"))
   final def stupidScala[I <: AnyInstructions](i: I): AnyInstructions.sameAs[I] = {
 
@@ -29,6 +29,7 @@ package object statika {
 
   def cmd(command: String)(args: String*): CmdInstructions = CmdInstructions(command +: args)
   def process(p: ProcessBuilder): ProcessInstructions = ProcessInstructions(p)
+  def withWorkingDir(wd: File)(seq: String*) = CmdWDInstructions(wd)(seq)
 
   implicit def seqToInstructions(s: Seq[String]): CmdInstructions = CmdInstructions(s)
   implicit def procBuilderToInstructions(p: ProcessBuilder): ProcessInstructions = ProcessInstructions(p)
