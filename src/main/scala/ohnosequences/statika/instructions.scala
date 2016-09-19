@@ -141,6 +141,15 @@ case class CmdInstructions(seq: Seq[String]) extends SimpleInstructions[String](
     }
 })
 
+/* Same as CmdInstructions but with a fixed working directory */
+case class CmdWDInstructions(wd: File)(seq: Seq[String]) extends SimpleInstructions[String]({
+  _: File =>
+    println(s"""[${wd.getPath}]> ${seq.mkString(" ")}""")
+    Try( Process(seq, wd).!! ) match {
+      case util.Success(output) => Success[String](Seq(seq.mkString(" ")), output)
+      case util.Failure(e) => Failure[String](Seq(e.getMessage))
+    }
+})
 
 case class ProcessInstructions(proc: ProcessBuilder) extends SimpleInstructions[String]({
   workingDir: File =>
