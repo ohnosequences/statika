@@ -179,7 +179,3 @@ case class amznAMIEnv[A <: AnyAmazonLinuxAMI](
   javaHeap: Int = 1, // in G
   workingDir: String = "/media/ephemeral0/"
 ) extends LinuxAMIEnvironment[A](amazonAMI)
-
-case object foo {
-  val d = amznAMIEnv(AmazonLinuxAMI(regions.Region.Ireland, PV, InstanceStore))
-}
