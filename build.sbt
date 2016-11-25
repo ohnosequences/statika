@@ -5,7 +5,7 @@ description   := "Managing dependencies"
 bucketSuffix := "era7.com"
 
 libraryDependencies ++= Seq (
-  "ohnosequences" %% "aws-scala-tools" % "0.17.0-97-g37276e9"
+  "ohnosequences" %% "aws-scala-tools" % "0.18.0"
 )
 
 testOptions       in Test += Tests.Argument("-oD")
