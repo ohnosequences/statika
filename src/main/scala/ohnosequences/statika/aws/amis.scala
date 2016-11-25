@@ -18,8 +18,8 @@ abstract class AnyLinuxAMIEnvironment extends Environment {
 
   /* This method checks that the machine on which it's called has the corresponding image. */
   def instructions: AnyInstructions = LazyTry[Unit] {
-    val amiId = io.Source.fromURL(new URL(ec2.metadataLocalURL, "ami-id")).mkString
-    if (amiId == ami.id) Success(s"Checked that the Amazon Machine Image id is ${ami.id}", ())
+    val amiId = getLocalMetadata("ami-id")
+    if (amiId == util.Success(ami.id)) Success(s"Checked that the Amazon Machine Image id is ${ami.id}", ())
     else Failure(s"AMI should be ${ami.id}. Found ${amiId}")
   }
 
@@ -145,31 +145,30 @@ case class LinuxAMICompSyntax[C <: AnyLinuxAMICompatible](val comp: C) {
 
   def userScript: String = comp.environment.userScript(comp)
 
-  type AMI = C#Environment#AMI
+  // type AMI = C#Environment#AMI
+  type AMI = comp.environment.AMI
 
   def instanceSpecs[
     IT <: AnyInstanceType
   ](instanceType: IT,
     keyPair: String,
     instanceProfile: Option[String],
-    securityGroups: List[String] = List(),
+    securityGroups: Set[String] = Set(),
     instanceMonitoring: Boolean = false,
     deviceMapping: Map[String, String] = Map[String, String]()
   )(implicit
     supportsAMI: IT SupportsAMI AMI
-  ): LaunchSpecs[InstanceSpecs[AMI, IT]] =
+  ): LaunchSpecs[IT, AMI] =
     LaunchSpecs(
-      InstanceSpecs[AMI, IT](
-        comp.environment.ami,
-        instanceType
-      )(supportsAMI)
-    )(keyPair,
+      comp.environment.ami,
+      instanceType,
+      keyPair,
       userScript,
       instanceProfile,
-      securityGroups,
       instanceMonitoring,
+      securityGroups,
       deviceMapping
-    )
+    )(supportsAMI)
 
 }
 
@@ -179,7 +178,3 @@ case class amznAMIEnv[A <: AnyAmazonLinuxAMI](
   javaHeap: Int = 1, // in G
   workingDir: String = "/media/ephemeral0/"
 ) extends LinuxAMIEnvironment[A](amazonAMI)
-
-case object foo {
-  val d = amznAMIEnv(AmazonLinuxAMI(regions.Region.Ireland, PV, InstanceStore))
-}
