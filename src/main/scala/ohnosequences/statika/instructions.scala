@@ -21,7 +21,7 @@ object AnyInstructions {
 
   type sameAs[I <: AnyInstructions] = I with AnyInstructions { type Out = I#Out }
 
-  type withOut[O] = AnyInstructions { type Out = O }
+  type withBound[O] = AnyInstructions { type Out <: O }
 }
 
 trait Instructions[O] extends AnyInstructions { type Out = O }
