@@ -86,12 +86,12 @@ abstract class LinuxAMIEnvironment[
   private def tagStep(state: InstanceStatus): String = s"tagStep $$? ${state}"
 
   /*  This part should make any necessary for building preparations,
-      like installing build tools: java-7 and scala-2.11.7 from rpm's
+      like installing build tools: java-7 and scala-2.11.8 from rpm's
   */
   private def preparing: String = s"""
-    |aws s3 cp --region ${ami.region} s3://resources.ohnosequences.com/scala/scala-2.11.7.rpm scala-2.11.7.rpm
+    |aws s3 cp --region ${ami.region} s3://resources.ohnosequences.com/scala/scala-2.11.8.rpm scala-2.11.8.rpm
     |yum -y remove java-1.7.0-openjdk
-    |yum -y install java-1.8.0-openjdk scala-2.11.7.rpm
+    |yum -y install java-1.8.0-openjdk scala-2.11.8.rpm
     |""".stripMargin
 
   /* This is the main part of the script: building applicator. */
