@@ -64,7 +64,7 @@ case class -&-[
     }
   }
 
-  override def toString = s"(${first.toString} -&- ${second.toString})"
+  override def toString: String = s"(${first.toString} -&- ${second.toString})"
 }
 ```
 
@@ -87,7 +87,7 @@ case class ->-[
     f.run(workingDir).trace +: s.run(workingDir)
   }
 
-  override def toString = s"(${first.toString} ->- ${second.toString})"
+  override def toString: String = s"(${first.toString} ->- ${second.toString})"
 }
 ```
 
@@ -112,7 +112,7 @@ case class -|-[
     }
   }
 
-  override def toString = s"(${first.toString} -|- ${second.toString})"
+  override def toString: String = s"(${first.toString} -|- ${second.toString})"
 }
 
 
