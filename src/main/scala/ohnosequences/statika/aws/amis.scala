@@ -9,6 +9,7 @@ package ohnosequences.statika.aws
 
 import ohnosequences.statika._
 import ohnosequences.awstools._, ec2._
+import java.io.File
 import java.net.URL
 
 abstract class AnyLinuxAMIEnvironment extends Environment {
@@ -48,20 +49,16 @@ abstract class LinuxAMIEnvironment[
   type AMI = A
 
   val javaHeap: Int // in G
-  val workingDir: String
+  val workingDir: File
+
+  val logFile: Option[File]
+
+  def logRedirect: String = logFile.map { file => s"exec &> ${file.getAbsolutePath}" }.getOrElse("")
 
   /*  First of all, `initSetting` part sets up logging.
       Then it sets useful environment variables.
   */
-  private def initSetting: String = s"""
-    |
-    |# redirecting output for logging
-    |exec &> /log.txt
-    |
-    |echo "tail -f /log.txt" > /bin/show-log
-    |chmod a+r /log.txt
-    |chmod a+x /bin/show-log
-    |ln -s /log.txt /root/log.txt
+  private def initSetting: String = logRedirect ++ s"""
     |
     |function tagStep(){
     |  if [ $$1 = 0 ]; then
@@ -176,5 +173,8 @@ case class LinuxAMICompSyntax[C <: AnyLinuxAMICompatible](val comp: C) {
 case class amznAMIEnv[A <: AnyAmazonLinuxAMI](
   amazonAMI: A,
   javaHeap: Int = 1, // in G
-  workingDir: String = "/media/ephemeral0/"
-) extends LinuxAMIEnvironment[A](amazonAMI)
+  workingDir: File = new File("/media/ephemeral0/")
+) extends LinuxAMIEnvironment[A](amazonAMI) {
+
+  val logFile = Some(new File("/log.txt"))
+}
