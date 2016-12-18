@@ -1,9 +1,12 @@
-This is a major release, because it introduces breaking changes.
-
 - Removed direct shapeless dependency
-- Upgraded code to the cosas v0.6.0 release
-- Moved to the package naming convention as in ohnosequences/cosas
 - Everything related to the "tower" of dependencies is removed
-- Now a bundle has only a typeset of direct dependencies and for installation it uses an untyped list
-- Bundle with default empty install method is called a _module_
+- Dependencies are now managed as plain lists of `AnyBundle`s
 - Distributions are renamed to _environments_
+- A new witness-based approach for recording that an environment can apply a bundle correctly
+- Rewrote instructions part: declaring instruction steps statically, then running them
+- statika and aws-statika are now integrated as one project. Now only two imports needed:
+
+    ```scala
+    import ohnosequences.statika._
+    import ohnosequences.statika.aws._
+    ```
