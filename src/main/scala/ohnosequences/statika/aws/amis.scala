@@ -48,6 +48,8 @@ abstract class LinuxAMIEnvironment[
 
   type AMI = A
 
+  val scalaVersion: String
+
   val javaHeap: Int // in G
   val javaOptions: Seq[String]
   val workingDir: File
@@ -87,12 +89,12 @@ abstract class LinuxAMIEnvironment[
   private def tagStep(state: InstanceStatus): String = s"tagStep $$? ${state}"
 
   /*  This part should make any necessary for building preparations,
-      like installing build tools: java-7 and scala-2.11.8 from rpm's
+      like installing build tools: java-8 and scala from rpm's
   */
   private def preparing: String = s"""
-    |aws s3 cp --region ${ami.region} s3://resources.ohnosequences.com/scala/scala-2.11.8.rpm scala-2.11.8.rpm
+    |aws s3 cp --region ${ami.region} s3://resources.ohnosequences.com/scala/scala-${scalaVersion}.rpm scala-${scalaVersion}.rpm
     |yum -y remove java-1.7.0-openjdk
-    |yum -y install java-1.8.0-openjdk scala-2.11.8.rpm
+    |yum -y install java-1.8.0-openjdk scala-${scalaVersion}.rpm
     |""".stripMargin
 
   /* This is the main part of the script: building applicator. */
@@ -173,6 +175,7 @@ case class LinuxAMICompSyntax[C <: AnyLinuxAMICompatible](val comp: C) {
 
 case class amznAMIEnv[A <: AnyAmazonLinuxAMI](
   amazonAMI: A,
+  scalaVersion: String = "2.11.11",
   workingDir: File = new File("/media/ephemeral0/"),
   javaHeap: Int = 1, // in G
   javaOptions: Seq[String] = Seq()
