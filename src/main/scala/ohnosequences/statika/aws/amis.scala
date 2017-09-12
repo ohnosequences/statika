@@ -49,6 +49,7 @@ abstract class LinuxAMIEnvironment[
   type AMI = A
 
   val javaHeap: Int // in G
+  val javaOptions: Seq[String]
   val workingDir: File
 
   val logFile: Option[File]
@@ -119,7 +120,7 @@ abstract class LinuxAMIEnvironment[
 
   /* Just running what we built. */
   private def applying: String = s"""
-    |java -d${ami.arch.wordSize} -Xmx${javaHeap}G -cp .:dist.jar apply
+    |java -d${ami.arch.wordSize} -Xmx${javaHeap}G ${javaOptions.mkString(" ")} -cp .:dist.jar apply
     |""".stripMargin
 
   private def fixLineEndings(s: String): String = s.replaceAll("\\r\\n", "\n").replaceAll("\\r", "\n")
@@ -172,8 +173,9 @@ case class LinuxAMICompSyntax[C <: AnyLinuxAMICompatible](val comp: C) {
 
 case class amznAMIEnv[A <: AnyAmazonLinuxAMI](
   amazonAMI: A,
+  workingDir: File = new File("/media/ephemeral0/"),
   javaHeap: Int = 1, // in G
-  workingDir: File = new File("/media/ephemeral0/")
+  javaOptions: Seq[String] = Seq()
 ) extends LinuxAMIEnvironment[A](amazonAMI) {
 
   val logFile = Some(new File("/log.txt"))
