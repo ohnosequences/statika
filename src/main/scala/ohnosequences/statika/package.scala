@@ -20,9 +20,8 @@ package object statika {
   def failure[O](msg: String): SimpleInstructions[O] =
     new SimpleInstructions[O]( _ => Failure[O](Seq(msg)) )
 
-  @SuppressWarnings(Array("org.brianmckenna.wartremover.warts.AsInstanceOf", "org.brianmckenna.wartremover.warts.IsInstanceOf"))
+  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
   final def stupidScala[I <: AnyInstructions](i: I): AnyInstructions.sameAs[I] = {
-
     i.asInstanceOf[AnyInstructions.sameAs[I]]
   }
 

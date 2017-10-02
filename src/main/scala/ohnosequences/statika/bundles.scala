@@ -1,8 +1,5 @@
 package ohnosequences.statika
 
-import java.nio.file._
-import java.io.File
-
 /* ## Bundles
 
    A bundle is supposed to be a lightweight cover for any kind of "modules" of any system, such as a

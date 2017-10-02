@@ -2,7 +2,6 @@ package ohnosequences.statika.tests
 
 import ohnosequences.statika._
 import java.io.File
-import scala.util.Try
 
 class InstructionsSuite extends org.scalatest.FunSuite {
 
@@ -59,7 +58,7 @@ class InstructionsSuite extends org.scalatest.FunSuite {
 
   test("test folding instructions") {
     val list = List(say("foo"), say("bar"), say("buh"))
-    val fold = list.reduce[AnyInstructions]( _ -&- _ )
+    val fold = list.foldLeft[AnyInstructions](say("nuf"))( _ -&- _ )
 
     assertSuccess{ fold }
   }

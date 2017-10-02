@@ -1,6 +1,5 @@
 package ohnosequences.statika.tests
 
-import ohnosequences.statika._
 import FooBundles._
 
 class InstallWithDepsSuite extends org.scalatest.FunSuite {

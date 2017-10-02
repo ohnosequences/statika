@@ -10,7 +10,6 @@ package ohnosequences.statika.aws
 import ohnosequences.statika._
 import ohnosequences.awstools._, ec2._
 import java.io.File
-import java.net.URL
 
 abstract class AnyLinuxAMIEnvironment extends Environment {
 

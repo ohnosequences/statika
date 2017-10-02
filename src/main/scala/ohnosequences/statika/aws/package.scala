@@ -1,7 +1,5 @@
 package ohnosequences.statika
 
-import ohnosequences.statika._
-
 package object aws {
 
   type AnyLinuxAMICompatible = AnyCompatible { type Environment <: AnyLinuxAMIEnvironment }
